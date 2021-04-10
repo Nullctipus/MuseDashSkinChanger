@@ -150,7 +150,7 @@ namespace SkinChanger
 
         public string Author => "BustR75";
 
-        public string HomePage => "";
+        public string HomePage => "https://github.com/BustR75/MuseDashSkinChanger";
         public static HarmonyMethod GetPatch(string name)
         {
             return new HarmonyMethod(typeof(Mod).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
