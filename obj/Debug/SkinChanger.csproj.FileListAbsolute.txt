@@ -1,6 +1,0 @@
-C:\Users\bustr\source\repos\SkinChanger\bin\Debug\SkinChanger.dll
-C:\Users\bustr\source\repos\SkinChanger\bin\Debug\SkinChanger.pdb
-C:\Users\bustr\source\repos\SkinChanger\obj\Debug\SkinChanger.csprojAssemblyReference.cache
-C:\Users\bustr\source\repos\SkinChanger\obj\Debug\SkinChanger.csproj.CoreCompileInputs.cache
-C:\Users\bustr\source\repos\SkinChanger\obj\Debug\SkinChanger.dll
-C:\Users\bustr\source\repos\SkinChanger\obj\Debug\SkinChanger.pdb
