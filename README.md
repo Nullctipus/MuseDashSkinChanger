@@ -18,7 +18,7 @@ Click the skin name
 next time the sprite gets loaded it will have the mod texture
 
 ## How to Install Skins
-Drop the folder `into MuseDash\Skins\Costume Name\`
+Drop the folder into `MuseDash\Skins\Costume Name\`
 
 press Reload
 
