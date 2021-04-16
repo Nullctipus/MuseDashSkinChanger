@@ -73,7 +73,7 @@ namespace SkinChanger
 				for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
 				{
 					GUILayout.BeginHorizontal();
-					string costume = Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>();
+					string costume = Singleton<ConfigManager>.instance.GetJson("character",true)[i]["cosName"].ToObject<string>();
 					GUILayout.Label(costume, GUILayout.Width(120));
 					Color color = GUI.contentColor;
 					if (selected[i] == -1)
@@ -108,7 +108,7 @@ namespace SkinChanger
 				for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
 				{
 					GUILayout.BeginHorizontal();
-					string costume = Singleton<ConfigManager>.instance["elfin_English"][i]["name"].ToObject<string>();
+					string costume = Singleton<ConfigManager>.instance.GetJson("elfin",true)[i]["name"].ToObject<string>();
 					GUILayout.Label(costume, GUILayout.Width(120));
 					Color color = GUI.contentColor;
 					if (selectedelfin[i] == -1)
