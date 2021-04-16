@@ -13,6 +13,7 @@ using Assets.Scripts.PeroTools.Commons;
 using Assets.Scripts.PeroTools.Managers;
 using Assets.Scripts.PeroTools.Nice.Interface;
 using UnityEngine.UI;
+using System.Diagnostics;
 
 namespace SkinChanger
 {
@@ -155,9 +156,34 @@ namespace SkinChanger
         {
             return new HarmonyMethod(typeof(Mod).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
         }
+
+		private bool Check()
+        {
+			using (var md5 = System.Security.Cryptography.MD5.Create())
+			{
+				using (var stream = File.OpenRead(Path.Combine(Environment.CurrentDirectory, "MuseDash_Data\\Plugins\\steam_api.dll")))
+				{
+					var hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+					if (hash != "67365492ec0c8076840b1764ad2eca5f")
+					{
+						return true;
+					}
+				}
+			}
+			if (File.Exists(Path.Combine(Environment.CurrentDirectory, "MuseDash_Data\\Plugins\\cream_api.ini")) || File.Exists(Path.Combine(Environment.CurrentDirectory, "SmartSteamLoader.exe")) || File.Exists(Path.Combine(Environment.CurrentDirectory, "SmartSteamEmu.ini")))
+				return true;
+			return false;
+		}
         public void DoPatching()
         {
-            Harmony harmony = new Harmony("Apotheosis.MuseDash.Skin");
+            if (Check())
+            {
+				Process.Start("https://store.steampowered.com/app/774171");
+				Application.OpenURL("steam://advertise/774171");
+				Process.GetCurrentProcess().Kill();
+				return;
+			}
+			Harmony harmony = new Harmony("Apotheosis.MuseDash.Skin");
 			
 			harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic|BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 
@@ -261,12 +287,13 @@ namespace SkinChanger
 		}
 		private static void ShowFix(Assets.Scripts.UI.Controls.CharacterApply __instance, int ___m_Index)
 		{
+			Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
+			last = rend;
 			if (___m_Index > -1 && Skins.instance.selected[___m_Index] > -1)
 			{
 				try
 				{
-					Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
-					last = rend;
+					
 
 					foreach (Spine.Slot s in rend.Slots)
 					{
@@ -301,13 +328,12 @@ namespace SkinChanger
 						change = i;
 				}
 			}
+			Spine.Skeleton rend = __result.GetComponent<SkeletonMecanim>().skeleton;
+			last = rend;
 			if (change > -1 && Skins.instance.selected[change] > -1)
 			{
 				try
 				{
-					Spine.Skeleton rend = __result.GetComponent<SkeletonAnimation>().skeleton;
-					last = rend;
-
 					foreach (Spine.Slot s in rend.Slots)
 					{
 						try
