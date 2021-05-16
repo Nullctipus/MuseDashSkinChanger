@@ -56,6 +56,20 @@ namespace SkinChanger
             }
 			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt")));
 			StartCoroutine(BadFix());
+			if (File.Exists(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json")))
+			{
+				//File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), "Insert");
+				selected = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<int, int>>(File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json")));
+			}
+            else
+            {
+				for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
+				{
+					selected[i] = -1;
+				}
+			}
+			Back.Reload();
+			instance = this;
 		}
 		KeyCode MenuKey = KeyCode.Insert;
 		public void Update()
@@ -71,18 +85,6 @@ namespace SkinChanger
 		{
 			try
 			{
-				if (instance == null)
-				{
-					for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
-					{
-						selected[i] = -1;
-					}
-					for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
-					{
-						selectedelfin[i] = -1;
-					}
-					instance = this;
-				}
 				GUILayout.BeginHorizontal();
 				if (GUILayout.Button("Reload"))
 				{
@@ -91,6 +93,13 @@ namespace SkinChanger
 				if (GUILayout.Button("Extract: " + extract))
 				{
 					extract = !extract;
+				}
+				if (GUILayout.Button("Deselect All"))
+				{
+					for (int i = 0; i < selected.Count; i++)
+					{
+						selected[i] = -1;
+					}
 				}
 				GUILayout.EndHorizontal();
 				character = GUILayout.Toggle(character, "Characters");
@@ -108,6 +117,7 @@ namespace SkinChanger
 						if (GUILayout.Button("default", GUILayout.Width(120)))
 						{
 							selected[i] = -1;
+							File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
 						}
 						GUI.contentColor = color;
 						try
@@ -121,6 +131,7 @@ namespace SkinChanger
 								if (GUILayout.Button(new DirectoryInfo(Back.skins[costume][j]).Name, GUILayout.Width(120)))
 								{
 									selected[i] = j;
+									File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
 								}
 								GUI.contentColor = color;
 							}
