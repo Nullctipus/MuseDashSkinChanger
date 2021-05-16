@@ -568,29 +568,29 @@ namespace SkinChanger
 			ShowFix(__instance, (int)Index.GetValue(__instance));
         }
 		static Dictionary<int, string> omfg = new Dictionary<int, string>();
-		/*//ext
-            if (Skins.extract)
-            {
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\"+ Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default");
-				foreach (Spine.Slot s in rend.Slots)
-				{
-					try
-					{
-						if(!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
-							File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
-					}
-					catch { }
-				}
-            }*/
 		private static void ShowFix(Assets.Scripts.UI.Controls.CharacterApply __instance, int ___m_Index)
 		{
 			try
 			{
 				Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
 				last = rend;
+				//ext
+				if (Skins.extract)
+				{
+					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
+					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>()));
+					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default"));
+					string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default");
+					foreach (Spine.Slot s in rend.Slots)
+					{
+						try
+						{
+							if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
+								File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
+						}
+						catch { }
+					}
+				}
 				if (___m_Index > -1 && Skins.instance.selected[___m_Index] > -1)
 				{
 					try
