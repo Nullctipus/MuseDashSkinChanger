@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,28 +25,44 @@ namespace SkinChanger
 		static bool elfin = false;
 		public static Rect windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 		public static bool ShowMenu = false;
+		
 		public void OnGUI()
         {
 			if (ShowMenu)
 			{
-				windowRect = GUI.Window(0, windowRect, DoMyWindow, "Muse Dash Loader");
+				windowRect = GUI.Window(0, windowRect, DoMyWindow, "BF Skinner");
 			}
 		}
+		// I am so sorry for this
+		public IEnumerator BadFix()
+        {
+			for(; ; )
+            {
+				foreach(Assets.Scripts.UI.Controls.CharacterApply c in Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>())
+                {
+					Mod.Show(c);
+                }
+				yield return new WaitForSeconds(1);
+            }
+        }
 		public void Start()
         {
+			if (instance != null)
+				Destroy(this);
 			Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins"));
 			if (!File.Exists(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt")))
             {
 				File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt"),"Insert");
             }
 			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt")));
-
+			StartCoroutine(BadFix());
 		}
 		KeyCode MenuKey = KeyCode.Insert;
 		public void Update()
         {
 			if(Input.GetKeyDown(MenuKey))
             {
+				ModLogger.AddLog("", "", ShowMenu);
 				ShowMenu = !ShowMenu;
             }
         }
@@ -111,6 +128,7 @@ namespace SkinChanger
 						catch { }
 						GUILayout.EndHorizontal();
 					}
+				/*
 				elfin = GUILayout.Toggle(elfin, "Elfins");
 				if (elfin)
 					for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
@@ -145,7 +163,7 @@ namespace SkinChanger
 						}
 						catch { }
 						GUILayout.EndHorizontal();
-					}
+					}*/
 				GUI.DragWindow(new Rect(0, 0, Screen.width, Screen.height));
 			}
             catch
@@ -187,7 +205,9 @@ namespace SkinChanger
 				return true;
 			return false;
 		}
-        public void DoPatching()
+		public static Harmony harmony;
+
+		public void DoPatching()
         {
             if (Check())
             {
@@ -196,21 +216,34 @@ namespace SkinChanger
 				Process.GetCurrentProcess().Kill();
 				return;
 			}
-			Harmony harmony = new Harmony("Apotheosis.MuseDash.Skin");
+			harmony = new Harmony("Apotheosis.MuseDash.Skin");
 			//VisManager:CalculateFrequencyResolution
 			//Assets.Scripts.GameCore.Managers.MainManager:InitLanguage
-			harmony.Patch(typeof(VisManager).GetMethod("CalculateFrequencyResolution", BindingFlags.Public|BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
+			//harmony.Patch(typeof(VisManager).GetMethod("CalculateFrequencyResolution", BindingFlags.Public|BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
+			harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 
 			//harmony.Patch(typeof(GirlManager).GetMethod("Reset"), null, GetPatch(nameof(Skinnn)));
 			//harmony.Patch(typeof(SpineActionController).GetMethod("Init"), null, GetPatch(nameof(ActionController)));
-			harmony.Patch(typeof(Assets.Scripts.UI.Controls.CharacterApply).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic), null, GetPatch(nameof(ShowFix)));
+			//harmony.Patch(typeof(Assets.Scripts.UI.Controls.CharacterApply).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic), null, GetPatch(nameof(ShowFix)));
+
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
-			harmony.Patch(typeof(SkeletonMecanim).GetMethod("Update"), null, GetPatch(nameof(MechanApply)));
+
+			//harmony.Patch(typeof(SkeletonMecanim).GetMethod("Update"), null, GetPatch(nameof(MechanApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
+
+			//public static void LoadScene(string sceneName, [DefaultValue("LoadSceneMode.Single")] LoadSceneMode mode)
+			
+
 		}
-        private static void OnStart()
+		private static void RES()
         {
-			UnityEngine.Object.DontDestroyOnLoad(new GameObject("SkinMenu").AddComponent<Skins>());
+			changed.Clear();
+        }
+		private static void OnStart()
+        {
+			GameObject gameObject = new GameObject("SkinMenu");
+			UnityEngine.Object.DontDestroyOnLoad(gameObject);
+			gameObject.AddComponent<Skins>();
         }
 		private static string[] shows = new string[]
 		{
@@ -221,7 +254,7 @@ namespace SkinChanger
 			"failShow"
 		};
 		private static Spine.Skeleton last;
-		static List<Spine.Skeleton> changed = new List<Spine.Skeleton>();
+		public static List<Spine.Skeleton> changed = new List<Spine.Skeleton>();
 		private static void GraphicsApply(SkeletonGraphic __instance)
 		{
 			if (changed.Contains(__instance.Skeleton))
@@ -338,19 +371,150 @@ namespace SkinChanger
 				}
 				try
 				{
-					ModLogger.AddLog("Skinchanger", "", __instance.ToString());
-					ModLogger.AddLog("Skinchanger", "", __instance.Skeleton.ToString());
-					ModLogger.AddLog("Skinchanger", "", __instance.Skeleton.Slots.ToString());
 					foreach (Spine.Slot s2 in __instance.Skeleton.Slots)
 					{
-						if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
-							s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
+                        try
+                        {
+                            if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
+                                s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
+                        }
+                        catch { }
+
 					}
 				}
 				catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
 			}
 		}
+		static FieldInfo index;
+		static FieldInfo Index
+        {
+            get
+            {
+				if(index == null)
+                {
+					index = typeof(Assets.Scripts.UI.Controls.CharacterApply).GetField("m_Index", BindingFlags.Instance | BindingFlags.NonPublic);
+                }
+				return index;
+            }
+        }
 		private static void MechanApply(SkeletonMecanim __instance)
+		{
+			try
+			{
+				if (changed.Contains(__instance.Skeleton))
+					return;
+				changed.Add(__instance.Skeleton);
+				int change = -1;
+				for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
+				{
+					try
+					{
+						if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["prefab"].ToObject<string>())
+							change = i;
+					}
+					catch { }
+				}
+				if (change > -1 && Skins.instance.selectedelfin[change] > -1)
+				{
+					try
+					{
+						foreach (Spine.Slot s in __instance.skeleton.Slots)
+						{
+							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
+								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
+						}
+					}
+					catch (Exception e) { Console.WriteLine(e.Message + "\n" + e.StackTrace); }
+				}
+			}
+			catch (Exception e) { ModLogger.Debug(e.Message + "\n" + e.StackTrace); }
+		}
+		/*private static void MechanApply(SkeletonMecanim __instance)
+        {
+		try{
+			if (changed.Contains(__instance.Skeleton))
+				return;
+			changed.Add(__instance.Skeleton);
+			int change = -1;
+			bool changetype = false;
+			for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
+			{
+				foreach (string s in shows)
+				{
+					if (__instance.transform.parent.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("character", false)[i][s].ToObject<string>())
+						change = i;
+				}
+			}
+			if (change == -1)
+			{
+				changetype = true;
+				for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
+				{
+					try
+					{
+						if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["mainShow"].ToObject<string>())
+							change = i;
+					}
+					catch { }
+				}
+
+			}
+			//ext
+			if (Skins.extract && change > -1)
+			{
+				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
+				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>()));
+				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default"));
+				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default");
+				
+				foreach (Spine.Slot s in __instance.skeleton.Slots)
+				{
+					try
+					{
+						if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
+							File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
+					}
+					catch { }
+				}
+			}
+			if (changetype && change > -1 && Skins.instance.selectedelfin[change] > -1)
+			{
+				try
+				{
+					foreach (Spine.Slot s in __instance.skeleton.Slots)
+					{
+						try
+						{
+							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
+								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
+						}
+						catch { }
+					}
+				}
+				catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
+			}
+			if (change > -1 && Skins.instance.selected[change] > -1)
+			{
+				try
+				{
+					foreach (Spine.Slot s in __instance.skeleton.Slots)
+					{
+						try
+						{
+							if (!omfg.ContainsKey(change))
+								omfg.Add(change, s.Attachment.GetMaterial().mainTexture.name + ".png");
+							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), omfg[change])))
+								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), omfg[change]));
+						}
+						catch { }
+					}
+				}
+				catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
+			}
+		}
+		catch{}
+		}*/
+		/*private static void MechanApply(SkeletonMecanim __instance)
 		{
 			if (changed.Contains(__instance.Skeleton))
 				return;
@@ -388,18 +552,23 @@ namespace SkinChanger
 				{
 					foreach (Spine.Slot s in __instance.skeleton.Slots)
 					{
-						if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change],true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-							s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change],true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
+						try
+						{
+							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
+								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
+						}
+						catch { }
 					}
 				}
 				catch (Exception e) { ModLogger.AddLog("Skinchanger","",e.Message + "\n" + e.StackTrace); }
 			}
-		}
-		private static void ShowFix(Assets.Scripts.UI.Controls.CharacterApply __instance, int ___m_Index)
-		{
-			Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
-			last = rend;
-            //ext
+		}*/
+		public static void Show(Assets.Scripts.UI.Controls.CharacterApply __instance)
+        {
+			ShowFix(__instance, (int)Index.GetValue(__instance));
+        }
+		static Dictionary<int, string> omfg = new Dictionary<int, string>();
+		/*//ext
             if (Skins.extract)
             {
 				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
@@ -415,29 +584,45 @@ namespace SkinChanger
 					}
 					catch { }
 				}
-            }
-			if (___m_Index > -1 && Skins.instance.selected[___m_Index] > -1)
+            }*/
+		private static void ShowFix(Assets.Scripts.UI.Controls.CharacterApply __instance, int ___m_Index)
+		{
+			try
 			{
-				try
+				Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
+				last = rend;
+				if (___m_Index > -1 && Skins.instance.selected[___m_Index] > -1)
 				{
-					
-
-					foreach (Spine.Slot s in rend.Slots)
+					try
 					{
-						try
+						foreach (Spine.Slot s in rend.Slots)
 						{
-							if (File.Exists(Path.Combine(Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]), s.Attachment.GetMaterial().mainTexture.name + ".png"));
-						}
-						catch { }
-					}
+							try
+							{
+								if (!omfg.ContainsKey(___m_Index))
+									omfg.Add(___m_Index, s.Attachment.GetMaterial().mainTexture.name + ".png");
+								if (File.Exists(Path.Combine(Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]), omfg[___m_Index])))
+								{
+									string skin = Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]);
+									string dir = Path.Combine(skin, omfg[___m_Index]);
+									Texture2D texture = Back.GetTexture(dir);
 
-				}
-				catch (Exception e)
-				{
-					ModLogger.AddLog("Skinchanger","","Skeleton: " + e.Message + "\n" + e.StackTrace);
+									s.Attachment.GetMaterial().mainTexture = texture;
+								}
+							}
+							catch (NullReferenceException) { }
+							catch (Exception e)
+							{
+							}
+						}
+
+					}
+					catch (Exception e)
+					{
+					}
 				}
 			}
+			catch { }
 		}
 		/*private static void Skinnn(GirlManager __instance)
 		{

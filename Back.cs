@@ -53,7 +53,7 @@ namespace SkinChanger
         {
             if (!textures.ContainsKey(path))
             {
-                textures.Add(path, new Texture2D(1024,2048,TextureFormat.RGBAFloat,false));
+                textures.Add(path, new Texture2D(1024,2048,TextureFormat.DXT1,false));
                 textures[path].LoadImage(File.ReadAllBytes(path));
                 textures[path].filterMode = FilterMode.Point;
                 textures[path].mipMapBias = 0;
