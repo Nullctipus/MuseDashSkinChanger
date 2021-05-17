@@ -199,34 +199,12 @@ namespace SkinChanger
             return new HarmonyMethod(typeof(Mod).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
         }
 
-		private bool Check()
-        {
-			using (var md5 = System.Security.Cryptography.MD5.Create())
-			{
-				using (var stream = File.OpenRead(Path.Combine(Environment.CurrentDirectory, "MuseDash_Data\\Plugins\\steam_api.dll")))
-				{
-					var hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
-					if (hash != "67365492ec0c8076840b1764ad2eca5f")
-					{
-						return true;
-					}
-				}
-			}
-			if (File.Exists(Path.Combine(Environment.CurrentDirectory, "MuseDash_Data\\Plugins\\cream_api.ini")) || File.Exists(Path.Combine(Environment.CurrentDirectory, "SmartSteamLoader.exe")) || File.Exists(Path.Combine(Environment.CurrentDirectory, "SmartSteamEmu.ini")))
-				return true;
-			return false;
-		}
+		
 		public static Harmony harmony;
 
 		public void DoPatching()
         {
-            if (Check())
-            {
-				Process.Start("https://store.steampowered.com/app/774171");
-				Application.OpenURL("steam://advertise/774171");
-				Process.GetCurrentProcess().Kill();
-				return;
-			}
+            
 			harmony = new Harmony("Apotheosis.MuseDash.Skin");
 			//VisManager:CalculateFrequencyResolution
 			//Assets.Scripts.GameCore.Managers.MainManager:InitLanguage

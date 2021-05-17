@@ -12,6 +12,7 @@ namespace SkinChanger
         public static Dictionary<string, List<string>> skins = new Dictionary<string, List<string>>();
         public static void Reload()
         {
+            textures.Clear();
             skins.Clear();
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins"));
             foreach(string s in Directory.GetDirectories(Path.Combine(Environment.CurrentDirectory, "Skins")))
