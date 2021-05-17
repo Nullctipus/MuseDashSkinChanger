@@ -21,16 +21,39 @@ namespace SkinChanger
 	public class Skins : MonoBehaviour
 	{
 		public static Skins instance;
-		static bool character = true;
-		static bool elfin = false;
+		static bool Preview = true;
 		public static Rect windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 		public static bool ShowMenu = false;
-		
+
+		static string _Name;
+		public static string Name
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_Name))
+                {
+					_Name = new string[]
+					{
+						"Skin Changer",
+						"BF Skinner",
+						"Can Has Skin",
+						"Mr. Skinny",
+						"Skin Head",
+						"Very Skin Much Wow",
+						"Skin Slave",
+						//Wont Appear / just to mess with people
+						"Cum Blast Me",
+						"Stealing Account"
+					}[Mathf.RoundToInt(UnityEngine.Random.Range(0, 5))];
+                }
+				return _Name;
+            }
+        }
 		public void OnGUI()
         {
 			if (ShowMenu)
 			{
-				windowRect = GUI.Window(0, windowRect, DoMyWindow, "BF Skinner");
+				windowRect = GUI.Window(0, windowRect, DoMyWindow, Name);
 			}
 		}
 		// I am so sorry for this
@@ -45,21 +68,22 @@ namespace SkinChanger
 				yield return new WaitForSeconds(1);
             }
         }
+		public static FilterMode Filter = FilterMode.Bilinear;
+		public static string CurrentDirectory = Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 		public void Start()
         {
 			if (instance != null)
 				Destroy(this);
-			Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins"));
-			if (!File.Exists(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt")))
+			Directory.CreateDirectory(Path.Combine(CurrentDirectory, "Skins"));
+			if (!File.Exists(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt")))
             {
-				File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt"),"Insert");
+				File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt"),"Insert");
             }
-			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Menukey.txt")));
+			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt")));
 			StartCoroutine(BadFix());
-			if (File.Exists(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json")))
+			if (File.Exists(Path.Combine(CurrentDirectory, "Skins\\Saved.json")))
 			{
-				//File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), "Insert");
-				selected = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<int, int>>(File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json")));
+				selected = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<int, int>>(File.ReadAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json")));
 			}
             else
             {
@@ -81,10 +105,12 @@ namespace SkinChanger
             }
         }
 		public static bool extract = false;
+		static Vector2 scroll = Vector2.zero;
 		public void DoMyWindow(int windowID)
 		{
 			try
 			{
+				scroll = GUILayout.BeginScrollView(scroll);
 				GUILayout.BeginHorizontal();
 				if (GUILayout.Button("Reload"))
 				{
@@ -101,29 +127,87 @@ namespace SkinChanger
 						selected[i] = -1;
 					}
 				}
+				if (GUILayout.Button(Preview ? "Hide Preview" : "Show Preview"))
+				{
+					Preview = !Preview;
+				}
+				if (GUILayout.Button("Filter Mode: " + Filter.ToString()))
+				{
+                    switch (Filter)
+                    {
+						case FilterMode.Point:
+							Filter = FilterMode.Bilinear;
+							break;
+						case FilterMode.Bilinear:
+							Filter = FilterMode.Trilinear;
+							break;
+						default:
+							Filter = FilterMode.Point;
+							break;
+					}
+				}
 				GUILayout.EndHorizontal();
-				character = GUILayout.Toggle(character, "Characters");
-				if (character)
-					for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
+				for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
+				{
+					GUILayout.BeginHorizontal();
+					string costume = Singleton<ConfigManager>.instance.GetJson("character", true)[i]["cosName"].ToObject<string>();
+					GUILayout.Label(costume, GUILayout.Width(120));
+					Color color = GUI.contentColor;
+					Color color2 = GUI.backgroundColor;
+					if (selected[i] == -1)
 					{
-						GUILayout.BeginHorizontal();
-						string costume = Singleton<ConfigManager>.instance.GetJson("character", true)[i]["cosName"].ToObject<string>();
-						GUILayout.Label(costume, GUILayout.Width(120));
-						Color color = GUI.contentColor;
-						if (selected[i] == -1)
-						{
-							GUI.contentColor = Color.green;
-						}
-						if (GUILayout.Button("default", GUILayout.Width(120)))
+						GUI.contentColor = Color.green;
+					}
+					if (Preview)
+					{
+						if (GUILayout.Button("default", GUILayout.Width(120), GUILayout.Height(120)))
 						{
 							selected[i] = -1;
-							File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+							File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented)); 
 						}
-						GUI.contentColor = color;
-						try
+					}
+					else if(GUILayout.Button("default", GUILayout.Width(120)))
+					{
+						selected[i] = -1;
+						File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+					}
+					GUI.contentColor = color;
+					try
+					{
+						for (int j = 0; j < Back.skins[costume].Count; j++)
 						{
-							for (int j = 0; j < Back.skins[costume].Count; j++)
+							
+							if (Preview)
 							{
+								if (File.Exists(Path.Combine(Back.GetSkin(i, j), "Preview.png")))
+								{
+									if (selected[i] == j)
+									{
+										GUI.backgroundColor = Color.green;
+									}
+									if (GUILayout.Button(Back.GetTexture(Path.Combine(Back.GetSkin(i, j), "Preview.png")), GUILayout.Width(120), GUILayout.Height(120)))
+									{
+										selected[i] = j;
+										File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+									}
+									GUI.backgroundColor = color2;
+								}
+								else
+								{
+									if (selected[i] == j)
+									{
+										GUI.contentColor = Color.green;
+									}
+									if (GUILayout.Button(new DirectoryInfo(Back.skins[costume][j]).Name, GUILayout.Width(120), GUILayout.Height(120)))
+									{
+										selected[i] = j;
+										File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+									}
+									GUI.contentColor = color;
+								}
+							}
+                            else
+                            {
 								if (selected[i] == j)
 								{
 									GUI.contentColor = Color.green;
@@ -131,59 +215,24 @@ namespace SkinChanger
 								if (GUILayout.Button(new DirectoryInfo(Back.skins[costume][j]).Name, GUILayout.Width(120)))
 								{
 									selected[i] = j;
-									File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+									File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
 								}
 								GUI.contentColor = color;
 							}
 						}
-						catch { }
-						GUILayout.EndHorizontal();
 					}
-				/*
-				elfin = GUILayout.Toggle(elfin, "Elfins");
-				if (elfin)
-					for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
-					{
-						GUILayout.BeginHorizontal();
-						string costume = Singleton<ConfigManager>.instance.GetJson("elfin", true)[i]["name"].ToObject<string>();
-						GUILayout.Label(costume, GUILayout.Width(120));
-						Color color = GUI.contentColor;
-						if (selectedelfin[i] == -1)
-						{
-							GUI.contentColor = Color.green;
-						}
-						if (GUILayout.Button("default", GUILayout.Width(120)))
-						{
-							selectedelfin[i] = -1;
-						}
-						GUI.contentColor = color;
-						try
-						{
-							for (int j = 0; j < Back.skins[costume].Count; j++)
-							{
-								if (selectedelfin[i] == j)
-								{
-									GUI.contentColor = Color.green;
-								}
-								if (GUILayout.Button(new DirectoryInfo(Back.skins[costume][j]).Name, GUILayout.Width(120)))
-								{
-									selectedelfin[i] = j;
-								}
-								GUI.contentColor = color;
-							}
-						}
-						catch { }
-						GUILayout.EndHorizontal();
-					}*/
+					catch { }
+					GUILayout.EndHorizontal();
+				}
+				GUILayout.EndScrollView();
 				GUI.DragWindow(new Rect(0, 0, Screen.width, Screen.height));
 			}
-            catch
-            {
-				// (:
-            }
+			catch(Exception e)
+			{
+				ModLogger.AddLog(Name, "Menu", e);
+			}
 		}
 		public Dictionary<int, int> selected = new Dictionary<int, int>();
-		public Dictionary<int, int> selectedelfin = new Dictionary<int, int>();
 	}
 	public class Mod : IMod
     {
@@ -206,35 +255,19 @@ namespace SkinChanger
         {
             
 			harmony = new Harmony("Apotheosis.MuseDash.Skin");
-			//VisManager:CalculateFrequencyResolution
-			//Assets.Scripts.GameCore.Managers.MainManager:InitLanguage
-			//harmony.Patch(typeof(VisManager).GetMethod("CalculateFrequencyResolution", BindingFlags.Public|BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 			harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
-
-			//harmony.Patch(typeof(GirlManager).GetMethod("Reset"), null, GetPatch(nameof(Skinnn)));
-			//harmony.Patch(typeof(SpineActionController).GetMethod("Init"), null, GetPatch(nameof(ActionController)));
-			//harmony.Patch(typeof(Assets.Scripts.UI.Controls.CharacterApply).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic), null, GetPatch(nameof(ShowFix)));
-
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
-
-			//harmony.Patch(typeof(SkeletonMecanim).GetMethod("Update"), null, GetPatch(nameof(MechanApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
-
-			//public static void LoadScene(string sceneName, [DefaultValue("LoadSceneMode.Single")] LoadSceneMode mode)
 			
 
 		}
-		private static void RES()
-        {
-			changed.Clear();
-        }
 		private static void OnStart()
         {
 			GameObject gameObject = new GameObject("SkinMenu");
 			UnityEngine.Object.DontDestroyOnLoad(gameObject);
 			gameObject.AddComponent<Skins>();
         }
-		private static string[] shows = new string[]
+		private static readonly string[] shows = new string[]
 		{
 			"mainShow",
 			"battleShow",
@@ -250,7 +283,6 @@ namespace SkinChanger
 				return;
 			changed.Add(__instance.Skeleton);
 			int change = -1;
-			bool changetype = false;
 			for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
 			{
 				foreach (string s in shows)
@@ -261,42 +293,19 @@ namespace SkinChanger
 						change = i;
 				}
 			}
-			if (change == -1)
-			{
-				changetype = true;
-				for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
-				{
-					try
-					{
-						if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["mainShow"].ToObject<string>())
-							change = i;
-					}
-					catch { }
-				}
-
-			}
 			//ext
 			if (Skins.extract && change > -1)
 			{
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default");
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\"));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>()));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default"));
+				string dir = Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default");
 				try
 				{
 					if (!File.Exists(Path.Combine(dir, __instance.OverrideTexture.name + ".png")))
 						File.WriteAllBytes(Path.Combine(dir, __instance.OverrideTexture.name + ".png"), MakeReadable(__instance.OverrideTexture as Texture2D).EncodeToPNG());
 				}
 				catch { }
-			}
-			if (changetype && change > -1 && Skins.instance.selectedelfin[change] > -1)
-			{
-				try
-				{
-					if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), (__instance.mainTexture as Texture).name + ".png")))
-						__instance.OverrideTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), (__instance.mainTexture as Texture).name + ".png"));
-				}
-				catch (Exception e) { ModLogger.AddLog("Skinchanger","",e.Message + "\n" + e.StackTrace); }
 			}
 			if (change > -1 && Skins.instance.selected[change] > -1)
 			{
@@ -328,10 +337,10 @@ namespace SkinChanger
 			//ext
 			if (Skins.extract && change > -1)
 			{
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default");
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\"));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>()));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default"));
+				string dir = Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default");
 				try
 				{
 					if (s != null)
@@ -386,172 +395,6 @@ namespace SkinChanger
 				return index;
             }
         }
-		private static void MechanApply(SkeletonMecanim __instance)
-		{
-			try
-			{
-				if (changed.Contains(__instance.Skeleton))
-					return;
-				changed.Add(__instance.Skeleton);
-				int change = -1;
-				for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
-				{
-					try
-					{
-						if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["prefab"].ToObject<string>())
-							change = i;
-					}
-					catch { }
-				}
-				if (change > -1 && Skins.instance.selectedelfin[change] > -1)
-				{
-					try
-					{
-						foreach (Spine.Slot s in __instance.skeleton.Slots)
-						{
-							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
-						}
-					}
-					catch (Exception e) { Console.WriteLine(e.Message + "\n" + e.StackTrace); }
-				}
-			}
-			catch (Exception e) { ModLogger.Debug(e.Message + "\n" + e.StackTrace); }
-		}
-		/*private static void MechanApply(SkeletonMecanim __instance)
-        {
-		try{
-			if (changed.Contains(__instance.Skeleton))
-				return;
-			changed.Add(__instance.Skeleton);
-			int change = -1;
-			bool changetype = false;
-			for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
-			{
-				foreach (string s in shows)
-				{
-					if (__instance.transform.parent.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("character", false)[i][s].ToObject<string>())
-						change = i;
-				}
-			}
-			if (change == -1)
-			{
-				changetype = true;
-				for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
-				{
-					try
-					{
-						if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["mainShow"].ToObject<string>())
-							change = i;
-					}
-					catch { }
-				}
-
-			}
-			//ext
-			if (Skins.extract && change > -1)
-			{
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance[changetype ? "elfin_English" : "character_English"][change][changetype ? "name" : "cosName"].ToObject<string>() + "\\Default");
-				
-				foreach (Spine.Slot s in __instance.skeleton.Slots)
-				{
-					try
-					{
-						if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
-							File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
-					}
-					catch { }
-				}
-			}
-			if (changetype && change > -1 && Skins.instance.selectedelfin[change] > -1)
-			{
-				try
-				{
-					foreach (Spine.Slot s in __instance.skeleton.Slots)
-					{
-						try
-						{
-							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
-						}
-						catch { }
-					}
-				}
-				catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
-			}
-			if (change > -1 && Skins.instance.selected[change] > -1)
-			{
-				try
-				{
-					foreach (Spine.Slot s in __instance.skeleton.Slots)
-					{
-						try
-						{
-							if (!omfg.ContainsKey(change))
-								omfg.Add(change, s.Attachment.GetMaterial().mainTexture.name + ".png");
-							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), omfg[change])))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), omfg[change]));
-						}
-						catch { }
-					}
-				}
-				catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
-			}
-		}
-		catch{}
-		}*/
-		/*private static void MechanApply(SkeletonMecanim __instance)
-		{
-			if (changed.Contains(__instance.Skeleton))
-				return;
-			changed.Add(__instance.Skeleton);
-			int change = -1;
-			for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("elfin", false).Count; i++)
-			{
-				try
-				{
-					if (__instance.gameObject.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("elfin", false)[i]["prefab"].ToObject<string>())
-						change = i;
-				}
-				catch { }
-			}
-			//ext
-			if (Skins.extract && change > -1)
-			{
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["elfin_English"][change]["name"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["elfin_English"][change]["name"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["elfin_English"][change]["name"].ToObject<string>() + "\\Default");
-				foreach (Spine.Slot s in __instance.skeleton.Slots)
-				{
-					try
-					{
-						if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
-							File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
-					}
-					catch { }
-				}
-			}
-			if (change > -1 && Skins.instance.selectedelfin[change] > -1)
-			{
-				try
-				{
-					foreach (Spine.Slot s in __instance.skeleton.Slots)
-					{
-						try
-						{
-							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selectedelfin[change], true), s.Attachment.GetMaterial().mainTexture.name + ".png"));
-						}
-						catch { }
-					}
-				}
-				catch (Exception e) { ModLogger.AddLog("Skinchanger","",e.Message + "\n" + e.StackTrace); }
-			}
-		}*/
 		public static void Show(Assets.Scripts.UI.Controls.CharacterApply __instance)
         {
 			ShowFix(__instance, (int)Index.GetValue(__instance));
@@ -566,10 +409,10 @@ namespace SkinChanger
 				//ext
 				if (Skins.extract)
 				{
-					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>()));
-					Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default"));
-					string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default");
+					Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\"));
+					Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>()));
+					Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default"));
+					string dir = Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_Index]["cosName"].ToObject<string>() + "\\Default");
 					foreach (Spine.Slot s in rend.Slots)
 					{
 						try
@@ -595,7 +438,6 @@ namespace SkinChanger
 									string skin = Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]);
 									string dir = Path.Combine(skin, omfg[___m_Index]);
 									Texture2D texture = Back.GetTexture(dir);
-
 									s.Attachment.GetMaterial().mainTexture = texture;
 								}
 							}
@@ -613,68 +455,6 @@ namespace SkinChanger
 			}
 			catch { }
 		}
-		/*private static void Skinnn(GirlManager __instance)
-		{
-            try { 
-			CheckInstanciate(__instance.girl);
-			//CheckInstanciate(__instance.girlGhost);
-			}
-			catch(Exception e)
-            {
-				ModLogger.AddLog("Uhh", "Fuck", e);
-            }
-		}
-		private static void CheckInstanciate(GameObject __result)
-		{
-			int change = -1;
-			for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson("character", false).Count; i++)
-			{
-				foreach (string s in shows)
-				{
-					if (__result.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("character", false)[i][s].ToObject<string>())
-						change = i;
-				}
-			}
-			Spine.Skeleton rend = __result.GetComponent<SkeletonMecanim>().skeleton;
-			last = rend;
-			//ext
-			if (change > -1 && Skins.extract)
-			{
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\"));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>()));
-				Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default"));
-				string dir = Path.Combine(Environment.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][change]["cosName"].ToObject<string>() + "\\Default");
-				foreach (Spine.Slot s in rend.Slots)
-				{
-					try
-					{
-						if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
-							File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
-					}
-					catch { }
-				}
-			}
-			if (change > -1 && Skins.instance.selected[change] > -1)
-			{
-				try
-				{
-					foreach (Spine.Slot s in rend.Slots)
-					{
-						try
-						{
-							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s.Attachment.GetMaterial().mainTexture.name + ".png")))
-								s.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s.Attachment.GetMaterial().mainTexture.name + ".png"));
-						}
-						catch { }
-					}
-
-				}
-				catch (Exception e)
-				{
-					ModLogger.AddLog("Skinchanger","","Skeleton: " + e.Message + "\n" + e.StackTrace);
-				}
-			}
-		}*/
 		static Texture2D MakeReadable(Texture2D img)
 		{
 			img.filterMode = FilterMode.Point;

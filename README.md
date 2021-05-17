@@ -29,13 +29,15 @@ Duplicate `MuseDash\Skins\Costume Name\Default` to the skin name
 
 It should look like `MuseDash\Skins\Costume Name\Skin Name`
 
-Finally edit the files in that folder with any program you want.
+edit the files in that folder with any program you want.
+
+Optionaly create a preview image with a 1x1 ratio called `Preview.png`
 
 ## How to Extract Skins
 Download [this](https://sourceforge.net/projects/utinyripper/files/) and extract it into a new folder
 
-Run `uTinyRipper.exe` then drop battle and unbattle from `Muse Dash\MuseDash_Data\StreamingAssets\AssetBundles\datas\characters\%characterid%
-`
+Run `uTinyRipper.exe` then drop battle and unbattle from `Muse Dash\MuseDash_Data\StreamingAssets\AssetBundles\datas\characters\%characterid%`
+
 When that is done loading click Export then extract to a folder you know the location of.
 
 Go to the folder in file explorer and search for `ext:png`

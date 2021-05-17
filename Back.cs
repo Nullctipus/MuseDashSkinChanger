@@ -25,20 +25,8 @@ namespace SkinChanger
                 skins.Add(new DirectoryInfo(s).Name, skin);
             }
         }
-        public static string GetSkin(int character,int selected,bool elfin = false)
+        public static string GetSkin(int character,int selected)
         {
-            if (elfin)
-            {
-                string elf = Singleton<ConfigManager>.instance["elfin_English"][character]["name"].ToObject<string>();
-                try
-                {
-                    return skins[elf][selected];
-                }
-                catch
-                {
-                    return "";
-                }
-            }
             string name = Singleton<ConfigManager>.instance["character_English"][character]["cosName"].ToObject<string>();
             try
             {
@@ -56,7 +44,7 @@ namespace SkinChanger
             {
                 textures.Add(path, new Texture2D(1024,2048,TextureFormat.DXT1,false));
                 textures[path].LoadImage(File.ReadAllBytes(path));
-                textures[path].filterMode = FilterMode.Point;
+                textures[path].filterMode = Skins.Filter;
                 textures[path].mipMapBias = 0;
                 textures[path].Apply();
                 Console.WriteLine(textures[path].height + ", " + textures[path].width);
