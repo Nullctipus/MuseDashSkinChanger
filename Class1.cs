@@ -101,7 +101,6 @@ namespace SkinChanger
         {
 			if(Input.GetKeyDown(MenuKey))
             {
-				ModLogger.AddLog("", "", ShowMenu);
 				ShowMenu = !ShowMenu;
             }
         }
@@ -155,8 +154,8 @@ namespace SkinChanger
 				for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
 				{
 					GUILayout.BeginHorizontal();
-					string costume = Singleton<ConfigManager>.instance.GetJson("character", true)[i]["cosName"].ToObject<string>();
-					GUILayout.Label(costume, GUILayout.Width(120));
+					string costume = Singleton<ConfigManager>.instance.GetConfigStringValue("character_English", i, "cosName");
+					GUILayout.Label(Singleton<ConfigManager>.instance.GetJson("character", true)[i]["cosName"].ToObject<string>(), GUILayout.Width(120));
 					Color color = GUI.contentColor;
 					Color color2 = GUI.backgroundColor;
 					if (selected[i] == -1)

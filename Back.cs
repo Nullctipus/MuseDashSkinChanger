@@ -27,7 +27,8 @@ namespace SkinChanger
         }
         public static string GetSkin(int character,int selected)
         {
-            string name = Singleton<ConfigManager>.instance["character_English"][character]["cosName"].ToObject<string>();
+            string name = Singleton<ConfigManager>.instance.GetConfigStringValue("character_English", character, "cosName");
+            //string name = Singleton<ConfigManager>.instance["character_English"][character]["cosName"].ToObject<string>();
             try
             {
                 return skins[name][selected];
