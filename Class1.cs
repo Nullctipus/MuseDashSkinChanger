@@ -94,6 +94,7 @@ namespace SkinChanger
 			}
 			Back.Reload();
 			instance = this;
+			windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 		}
 		KeyCode MenuKey = KeyCode.Insert;
 		public void Update()
@@ -131,7 +132,7 @@ namespace SkinChanger
 				{
 					Preview = !Preview;
 				}
-				if (GUILayout.Button("Filter Mode: " + Filter.ToString()))
+				/*if (GUILayout.Button("Filter Mode: " + Filter.ToString()))
 				{
                     switch (Filter)
                     {
@@ -145,6 +146,10 @@ namespace SkinChanger
 							Filter = FilterMode.Point;
 							break;
 					}
+				}*/
+                if (GUILayout.Button("Reset Window"))
+                {
+					windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 				}
 				GUILayout.EndHorizontal();
 				for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
@@ -236,7 +241,7 @@ namespace SkinChanger
 	}
 	public class Mod : IMod
     {
-        public string Name => "Skin Changer";
+        public string Name => Skins.Name;
 
         public string Description => "Change the textures on the characters";
 

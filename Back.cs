@@ -42,9 +42,9 @@ namespace SkinChanger
         {
             if (!textures.ContainsKey(path))
             {
-                textures.Add(path, new Texture2D(1024,2048,TextureFormat.DXT1,false));
+                textures.Add(path, new Texture2D(1024,2048,TextureFormat.RGBA32,false,true));
                 textures[path].LoadImage(File.ReadAllBytes(path));
-                textures[path].filterMode = Skins.Filter;
+                textures[path].filterMode = FilterMode.Bilinear;
                 textures[path].mipMapBias = 0;
                 textures[path].Apply();
                 Console.WriteLine(textures[path].height + ", " + textures[path].width);
