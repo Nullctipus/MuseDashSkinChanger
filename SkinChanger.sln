@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30406.217
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkinChanger", "SkinChanger.csproj", "{30B3A086-381E-4086-8C9A-36F9232ABB08}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkinChangerLoader", "..\SkinChangerLoader\SkinChangerLoader.csproj", "{250BCB95-5EDD-46B5-9127-8A379FF765B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{30B3A086-381E-4086-8C9A-36F9232ABB08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30B3A086-381E-4086-8C9A-36F9232ABB08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30B3A086-381E-4086-8C9A-36F9232ABB08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{250BCB95-5EDD-46B5-9127-8A379FF765B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{250BCB95-5EDD-46B5-9127-8A379FF765B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{250BCB95-5EDD-46B5-9127-8A379FF765B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{250BCB95-5EDD-46B5-9127-8A379FF765B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
