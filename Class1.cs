@@ -427,6 +427,26 @@ namespace SkinChanger
 						catch { }
 					}
 				}
+				if(___m_Index > -1 && Skins.instance.selected[___m_Index] == -1)
+                {
+					foreach (Spine.Slot s in rend.Slots)
+					{
+						try
+						{
+							if (!omfg.ContainsKey(___m_Index)) 
+								omfg.Add(___m_Index, s.Attachment.GetMaterial().mainTexture.name + ".png");
+
+							if (!Defaults.ContainsKey(___m_Index) && !Back.IsModded((Texture2D)s.Attachment.GetMaterial().mainTexture))
+								Defaults.Add(___m_Index, (Texture2D)s.Attachment.GetMaterial().mainTexture);
+
+							s.Attachment.GetMaterial().mainTexture = Defaults[___m_Index];
+						}
+						catch (NullReferenceException) { }
+						catch (Exception e)
+						{
+						}
+					}
+				}
 				if (___m_Index > -1 && Skins.instance.selected[___m_Index] > -1)
 				{
 					try
@@ -442,6 +462,8 @@ namespace SkinChanger
 									string skin = Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]);
 									string dir = Path.Combine(skin, omfg[___m_Index]);
 									Texture2D texture = Back.GetTexture(dir);
+									if (!Defaults.ContainsKey(___m_Index) && !Back.IsModded((Texture2D)s.Attachment.GetMaterial().mainTexture))
+										Defaults.Add(___m_Index, (Texture2D)s.Attachment.GetMaterial().mainTexture);
 									s.Attachment.GetMaterial().mainTexture = texture;
 								}
 							}
@@ -459,6 +481,7 @@ namespace SkinChanger
 			}
 			catch { }
 		}
+		static Dictionary<int, Texture2D> Defaults = new Dictionary<int, Texture2D>();
 		static Texture2D MakeReadable(Texture2D img)
 		{
 			img.filterMode = FilterMode.Point;

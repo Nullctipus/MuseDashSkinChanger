@@ -39,6 +39,15 @@ namespace SkinChanger
             }
 
         }
+        public static bool IsModded(Texture2D texture)
+        {
+            foreach(var v in textures)
+            {
+                if (v.Value == texture)
+                    return true;
+            }
+            return false;
+        }
         public static Texture2D GetTexture(string path)
         {
             if (!textures.ContainsKey(path))
