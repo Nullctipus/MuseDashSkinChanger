@@ -91,6 +91,10 @@
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Back.cs" />

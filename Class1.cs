@@ -131,22 +131,11 @@ namespace SkinChanger
 				{
 					Preview = !Preview;
 				}
-				/*if (GUILayout.Button("Filter Mode: " + Filter.ToString()))
+				if (GUILayout.Button("Download 2x (1GB)"))
 				{
-                    switch (Filter)
-                    {
-						case FilterMode.Point:
-							Filter = FilterMode.Bilinear;
-							break;
-						case FilterMode.Bilinear:
-							Filter = FilterMode.Trilinear;
-							break;
-						default:
-							Filter = FilterMode.Point;
-							break;
-					}
-				}*/
-                if (GUILayout.Button("Reset Window"))
+					Process.Start("https://github.com/BustR75/MuseDashSkinChanger/releases/download/1.5.1/Waifu2X_2X_CUnet_Level3_16Bit.7z");
+				}
+				if (GUILayout.Button("Reset Window"))
                 {
 					windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 				}
@@ -442,7 +431,7 @@ namespace SkinChanger
 							s.Attachment.GetMaterial().mainTexture = Defaults[___m_Index];
 						}
 						catch (NullReferenceException) { }
-						catch (Exception e)
+						catch
 						{
 						}
 					}
@@ -468,13 +457,13 @@ namespace SkinChanger
 								}
 							}
 							catch (NullReferenceException) { }
-							catch (Exception e)
+							catch
 							{
 							}
 						}
 
 					}
-					catch (Exception e)
+					catch
 					{
 					}
 				}
