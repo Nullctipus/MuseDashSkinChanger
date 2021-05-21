@@ -48,14 +48,19 @@ namespace SkinChanger
             }
             return false;
         }
+        //hours spent trying to fix: 4
         public static Texture2D GetTexture(string path)
         {
             if (!textures.ContainsKey(path))
             {
-                textures.Add(path, new Texture2D(1024,2048,TextureFormat.RGBA32,false,true));
+                /*Texture2D temp = new Texture2D(1, 1);
+                temp.LoadImage(File.ReadAllBytes(path));*/
+                /*textures[path].SetPixels32(temp.GetPixels32());*/
+                textures.Add(path, new Texture2D(1, 1, TextureFormat.RGBA32, false, true));
                 textures[path].LoadImage(File.ReadAllBytes(path));
                 textures[path].filterMode = FilterMode.Bilinear;
                 textures[path].mipMapBias = 0;
+                textures[path].anisoLevel = 1;
                 textures[path].Apply();
                 Console.WriteLine(textures[path].height + ", " + textures[path].width);
             }

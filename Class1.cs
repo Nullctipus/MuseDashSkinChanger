@@ -21,7 +21,7 @@ namespace SkinChanger
 	public class Skins : MonoBehaviour
 	{
 		public static Skins instance;
-		static bool Preview = true;
+		static bool Preview = false;
 		public static Rect windowRect = new Rect(Screen.width / 3, Screen.height / 3, Screen.width / 1.5f, Screen.height / 1.5f);
 		public static bool ShowMenu = false;
 
@@ -56,16 +56,26 @@ namespace SkinChanger
 				windowRect = GUI.Window(0, windowRect, DoMyWindow, Name);
 			}
 		}
+		Assets.Scripts.UI.Controls.CharacterApply[] cache;
 		// I am so sorry for this
 		public IEnumerator BadFix()
         {
-			for(; ; )
-            {
-				foreach(Assets.Scripts.UI.Controls.CharacterApply c in Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>())
+			int i = 0;
+			for (; ; )
+			{
+				if (cache == null || cache.Length <= 2)
+					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
+				foreach (Assets.Scripts.UI.Controls.CharacterApply c in cache)
                 {
 					Mod.Show(c);
                 }
 				yield return new WaitForSeconds(1);
+				if(i++ == 10)
+                {
+					i = 0;
+					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
+				}
+
             }
         }
 		public static FilterMode Filter = FilterMode.Bilinear;
@@ -115,6 +125,7 @@ namespace SkinChanger
 				if (GUILayout.Button("Reload"))
 				{
 					Back.Reload();
+					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
 				}
 				if (GUILayout.Button("Extract: " + extract))
 				{
@@ -134,6 +145,10 @@ namespace SkinChanger
 				if (GUILayout.Button("Download 2x (1GB)"))
 				{
 					Process.Start("https://github.com/BustR75/MuseDashSkinChanger/releases/download/1.5.1/Waifu2X_2X_CUnet_Level3_16Bit.7z");
+				}
+				if (GUILayout.Button("Forground "+ Mod.Forground))
+				{
+					Mod.Forground = !Mod.Forground;
 				}
 				if (GUILayout.Button("Reset Window"))
                 {
@@ -195,6 +210,7 @@ namespace SkinChanger
 									{
 										selected[i] = j;
 										File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+
 									}
 									GUI.contentColor = color;
 								}
@@ -229,6 +245,7 @@ namespace SkinChanger
 	}
 	public class Mod : IMod
     {
+		public static bool Forground = false;
         public string Name => Skins.Name;
 
         public string Description => "Change the textures on the characters";
@@ -307,6 +324,8 @@ namespace SkinChanger
 
 					if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), (__instance.mainTexture as Texture).name + ".png")))
 						__instance.OverrideTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), (__instance.mainTexture as Texture).name + ".png"));
+					if (Forground) __instance.material.renderQueue = 3100;
+					else __instance.material.renderQueue = 3000;
 				}
 				catch (Exception e) { ModLogger.AddLog("Skinchanger","",e.Message + "\n" + e.StackTrace); }
 			}
@@ -357,6 +376,8 @@ namespace SkinChanger
 			{
                 if (s != null)
                 {
+					if (Forground) s.sharedMaterial.renderQueue = 3100;
+					else s.sharedMaterial.renderQueue = 3000;
 					if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s.sharedMaterial.mainTexture.name + ".png")))
 						s.sharedMaterial.mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s.sharedMaterial.mainTexture.name + ".png"));
 				}
@@ -366,7 +387,9 @@ namespace SkinChanger
 					{
                         try
                         {
-                            if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
+							if (Forground) s2.Attachment.GetMaterial().renderQueue = 3100;
+							else s2.Attachment.GetMaterial().renderQueue = 3000;
+							if (File.Exists(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
                                 s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Skins.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
                         }
                         catch { }
@@ -393,11 +416,16 @@ namespace SkinChanger
 			ShowFix(__instance, (int)Index.GetValue(__instance));
         }
 		static Dictionary<int, string> omfg = new Dictionary<int, string>();
+		static Dictionary<Assets.Scripts.UI.Controls.CharacterApply, Spine.Skeleton> cache = new Dictionary<Assets.Scripts.UI.Controls.CharacterApply, Spine.Skeleton>();
 		private static void ShowFix(Assets.Scripts.UI.Controls.CharacterApply __instance, int ___m_Index)
 		{
 			try
 			{
-				Spine.Skeleton rend = __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton;
+                if (!cache.ContainsKey(__instance))
+                {
+					cache.Add(__instance, __instance.gameObject.GetComponent<SkeletonMecanim>().skeleton);
+                }
+				Spine.Skeleton rend = cache[__instance];
 				last = rend;
 				//ext
 				if (Skins.extract)
@@ -427,7 +455,8 @@ namespace SkinChanger
 
 							if (!Defaults.ContainsKey(___m_Index) && !Back.IsModded((Texture2D)s.Attachment.GetMaterial().mainTexture))
 								Defaults.Add(___m_Index, (Texture2D)s.Attachment.GetMaterial().mainTexture);
-
+							if (Forground) s.Attachment.GetMaterial().renderQueue = 3100;
+							else s.Attachment.GetMaterial().renderQueue = 3000;
 							s.Attachment.GetMaterial().mainTexture = Defaults[___m_Index];
 						}
 						catch (NullReferenceException) { }
@@ -454,6 +483,8 @@ namespace SkinChanger
 									if (!Defaults.ContainsKey(___m_Index) && !Back.IsModded((Texture2D)s.Attachment.GetMaterial().mainTexture))
 										Defaults.Add(___m_Index, (Texture2D)s.Attachment.GetMaterial().mainTexture);
 									s.Attachment.GetMaterial().mainTexture = texture;
+									if (Forground) s.Attachment.GetMaterial().renderQueue = 3100;
+									else s.Attachment.GetMaterial().renderQueue = 3000;
 								}
 							}
 							catch (NullReferenceException) { }
