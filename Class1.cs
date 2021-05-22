@@ -11,6 +11,7 @@ using HarmonyLib;
 using Spine.Unity;
 using UnityEngine;
 using Assets.Scripts.PeroTools.Commons;
+using Assets.Scripts.UI.Controls;
 using Assets.Scripts.PeroTools.Managers;
 using Assets.Scripts.PeroTools.Nice.Interface;
 using UnityEngine.UI;
@@ -243,6 +244,20 @@ namespace SkinChanger
 		}
 		public Dictionary<int, int> selected = new Dictionary<int, int>();
 	}
+	public class Expression
+    {
+		public Expression(string anim, string[] audio, List<string> text, float weigh)
+        {
+			animName = anim;
+			audioNames = audio;
+			texts = text;
+			weight = weigh;
+        }
+		public string animName;
+		public string[] audioNames;
+		public List<string> texts;
+		public float weight;
+	}
 	public class Mod : IMod
     {
 		public static bool Forground = false;
@@ -268,7 +283,7 @@ namespace SkinChanger
 			harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
-			
+			harmony.Patch(typeof(CharacterExpression).GetMethod("RefreshExpressions", BindingFlags.NonPublic | BindingFlags.Instance), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
 
 		}
 		private static void OnStart()
@@ -277,6 +292,44 @@ namespace SkinChanger
 			UnityEngine.Object.DontDestroyOnLoad(gameObject);
 			gameObject.AddComponent<Skins>();
         }
+		private static void PreRefreshExpression(ref int ___m_CharacterIdx)
+        {
+			___m_CharacterIdx = -1;
+		}
+		private static void RefreshExpression(ref List<CharacterExpression.Expression> ___m_Expressions, int ___m_CharacterIdx)
+        {
+            if (Skins.extract)
+            {
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\"));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_CharacterIdx]["cosName"].ToObject<string>()));
+				Directory.CreateDirectory(Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_CharacterIdx]["cosName"].ToObject<string>() + "\\Default"));
+				string dir = Path.Combine(Skins.CurrentDirectory, "Skins\\" + Singleton<ConfigManager>.instance["character_English"][___m_CharacterIdx]["cosName"].ToObject<string>() + "\\Default");
+				List<Expression> expressions = new List<Expression>();
+				foreach(var v in ___m_Expressions)
+                {
+					expressions.Add(new Expression(v.animName, v.audioNames, v.texts, v.weight));
+                }
+				File.WriteAllText(Path.Combine(dir, "Expressions.json"), Newtonsoft.Json.JsonConvert.SerializeObject(expressions,Newtonsoft.Json.Formatting.Indented));
+            }
+			string skin = Back.GetSkin(___m_CharacterIdx, Skins.instance.selected[___m_CharacterIdx]);
+			if(File.Exists(Path.Combine(skin, "Expressions.json")))
+            {
+				List<Expression> expression = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Expression>>(File.ReadAllText(Path.Combine(skin, "Expressions.json")));
+				List<CharacterExpression.Expression> expressions = new List<CharacterExpression.Expression>();
+				foreach (var v in expression)
+				{
+					expressions.Add(new CharacterExpression.Expression()
+					{
+						animName = v.animName,
+						audioNames = v.audioNames,
+						texts = v.texts,
+						weight = v.weight
+					});
+				}
+				___m_Expressions.Clear();
+				___m_Expressions.AddRange(expressions);
+			}
+		}
 		private static readonly string[] shows = new string[]
 		{
 			"mainShow",
@@ -438,7 +491,7 @@ namespace SkinChanger
 					{
 						try
 						{
-							if (!File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
+							if (s.Attachment.GetMaterial().mainTexture.name != "" && !File.Exists(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png")))
 								File.WriteAllBytes(Path.Combine(dir, s.Attachment.GetMaterial().mainTexture.name + ".png"), MakeReadable(s.Attachment.GetMaterial().mainTexture as Texture2D).EncodeToPNG());
 						}
 						catch { }
