@@ -5,8 +5,6 @@ using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using ModHelper;
 using HarmonyLib;
 using Spine.Unity;
@@ -17,9 +15,6 @@ using Assets.Scripts.PeroTools.Managers;
 using Assets.Scripts.PeroTools.Nice.Interface;
 using UnityEngine.UI;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 
 namespace SkinChanger
 {
@@ -61,7 +56,6 @@ namespace SkinChanger
 				windowRect = GUI.Window(0, windowRect, DoMyWindow, Name);
 			}
 		}
-		Assets.Scripts.UI.Controls.CharacterApply[] cache;
 		public static FilterMode Filter = FilterMode.Bilinear;
 		public static string CurrentDirectory;
 		public void Start()
@@ -79,26 +73,6 @@ namespace SkinChanger
 				File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt"),"Insert");
             }
 			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt")));
-
-			new Thread((ThreadStart)delegate
-			{
-				int i = 0;
-				for (; ; )
-				{
-					if (cache == null || cache.Length <= 2)
-						cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
-					foreach (Assets.Scripts.UI.Controls.CharacterApply c in cache)
-					{
-						Mod.Show(c);
-					}
-					if (i++ == 10)
-					{
-						i = 0;
-						cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
-					}
-					Thread.Sleep(1000);
-				}
-			}).Start();
 
 			if (File.Exists(Path.Combine(CurrentDirectory, "Skins\\Saved.json")))
 			{
@@ -134,7 +108,10 @@ namespace SkinChanger
 				if (GUILayout.Button("Reload"))
 				{
 					Back.Reload();
-					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
+					foreach (var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
+					{
+						Mod.Show(c);
+					}
 				}
 				if (GUILayout.Button("Extract: " + extract))
 				{
@@ -193,39 +170,26 @@ namespace SkinChanger
 					{
 						for (int j = 0; j < Back.skins[costume].Count; j++)
 						{
-							
-							if (Preview)
-							{
-								if (File.Exists(Path.Combine(Back.GetSkin(i, j), "Preview.png")))
-								{
-									if (selected[i] == j)
-									{
-										GUI.backgroundColor = Color.green;
-									}
-									if (GUILayout.Button(Back.GetTexture(Path.Combine(Back.GetSkin(i, j), "Preview.png")), GUILayout.Width(120), GUILayout.Height(120)))
-									{
-										selected[i] = j;
-										File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
-									}
-									GUI.backgroundColor = color2;
-								}
-								else
-								{
-									if (selected[i] == j)
-									{
-										GUI.contentColor = Color.green;
-									}
-									if (GUILayout.Button(new DirectoryInfo(Back.skins[costume][j]).Name, GUILayout.Width(120), GUILayout.Height(120)))
-									{
-										selected[i] = j;
-										File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
 
-									}
-									GUI.contentColor = color;
+							if (Preview && File.Exists(Path.Combine(Back.GetSkin(i, j), "Preview.png")))
+							{
+								if (selected[i] == j)
+								{
+									GUI.backgroundColor = Color.green;
 								}
+								if (GUILayout.Button(Back.GetTexture(Path.Combine(Back.GetSkin(i, j), "Preview.png")), GUILayout.Width(120), GUILayout.Height(120)))
+								{
+									selected[i] = j;
+									File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+									foreach (var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
+									{
+										Mod.Show(c);
+									}
+								}
+								GUI.backgroundColor = color2;
 							}
-                            else
-                            {
+							else
+							{
 								if (selected[i] == j)
 								{
 									GUI.contentColor = Color.green;
@@ -234,6 +198,10 @@ namespace SkinChanger
 								{
 									selected[i] = j;
 									File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json"), Newtonsoft.Json.JsonConvert.SerializeObject(selected, Newtonsoft.Json.Formatting.Indented));
+									foreach (var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
+									{
+										Mod.Show(c);
+									}
 								}
 								GUI.contentColor = color;
 							}
@@ -293,8 +261,13 @@ namespace SkinChanger
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
 			harmony.Patch(typeof(CharacterExpression).GetMethod("RefreshExpressions", BindingFlags.NonPublic | BindingFlags.Instance), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
+			harmony.Patch(typeof(CharacterApply).GetMethod("Awake",BindingFlags.NonPublic|BindingFlags.Instance),null, GetPatch(nameof(charapply)));
 
 
+		}
+		static void charapply(CharacterApply __instance)
+        {
+			Mod.Show(__instance);
 		}
 		private static void OnStart()
         {
