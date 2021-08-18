@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using ModHelper;
 using HarmonyLib;
 using Spine.Unity;
@@ -16,6 +17,9 @@ using Assets.Scripts.PeroTools.Managers;
 using Assets.Scripts.PeroTools.Nice.Interface;
 using UnityEngine.UI;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SkinChanger
 {
@@ -58,31 +62,15 @@ namespace SkinChanger
 			}
 		}
 		Assets.Scripts.UI.Controls.CharacterApply[] cache;
-		// I am so sorry for this
-		public IEnumerator BadFix()
-        {
-			int i = 0;
-			for (; ; )
-			{
-				if (cache == null || cache.Length <= 2)
-					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
-				foreach (Assets.Scripts.UI.Controls.CharacterApply c in cache)
-                {
-					Mod.Show(c);
-                }
-				yield return new WaitForSeconds(1);
-				if(i++ == 10)
-                {
-					i = 0;
-					cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
-				}
-
-            }
-        }
 		public static FilterMode Filter = FilterMode.Bilinear;
-		public static string CurrentDirectory = Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+		public static string CurrentDirectory;
 		public void Start()
         {
+			if (!string.IsNullOrEmpty(Assembly.GetExecutingAssembly().Location))
+				CurrentDirectory = Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+			else
+				CurrentDirectory = Environment.CurrentDirectory;
+
 			if (instance != null)
 				Destroy(this);
 			Directory.CreateDirectory(Path.Combine(CurrentDirectory, "Skins"));
@@ -91,7 +79,27 @@ namespace SkinChanger
 				File.WriteAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt"),"Insert");
             }
 			MenuKey = (KeyCode)Enum.Parse(typeof(KeyCode), File.ReadAllText(Path.Combine(CurrentDirectory, "Skins\\Menukey.txt")));
-			StartCoroutine(BadFix());
+
+			new Thread((ThreadStart)delegate
+			{
+				int i = 0;
+				for (; ; )
+				{
+					if (cache == null || cache.Length <= 2)
+						cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
+					foreach (Assets.Scripts.UI.Controls.CharacterApply c in cache)
+					{
+						Mod.Show(c);
+					}
+					if (i++ == 10)
+					{
+						i = 0;
+						cache = Resources.FindObjectsOfTypeAll<Assets.Scripts.UI.Controls.CharacterApply>();
+					}
+					Thread.Sleep(1000);
+				}
+			}).Start();
+
 			if (File.Exists(Path.Combine(CurrentDirectory, "Skins\\Saved.json")))
 			{
 				selected = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<int, int>>(File.ReadAllText(Path.Combine(CurrentDirectory, "Skins\\Saved.json")));
@@ -263,6 +271,7 @@ namespace SkinChanger
 		public static bool Forground = false;
         public string Name => Skins.Name;
 
+		public string Version = "1.6.1";
         public string Description => "Change the textures on the characters";
 
         public string Author => "BustR75";
@@ -284,6 +293,7 @@ namespace SkinChanger
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
 			harmony.Patch(typeof(CharacterExpression).GetMethod("RefreshExpressions", BindingFlags.NonPublic | BindingFlags.Instance), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
+
 
 		}
 		private static void OnStart()
