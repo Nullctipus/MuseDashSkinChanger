@@ -261,7 +261,7 @@ namespace SkinChanger
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
 			harmony.Patch(typeof(CharacterExpression).GetMethod("RefreshExpressions", BindingFlags.NonPublic | BindingFlags.Instance), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
-			harmony.Patch(typeof(CharacterApply).GetMethod("Awake",BindingFlags.NonPublic|BindingFlags.Instance),null, GetPatch(nameof(charapply)));
+			harmony.Patch(typeof(CharacterApply).GetMethod("OnEnable", BindingFlags.NonPublic|BindingFlags.Instance),null, GetPatch(nameof(charapply)));
 
 
 		}
