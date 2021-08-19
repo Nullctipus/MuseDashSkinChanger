@@ -261,13 +261,19 @@ namespace SkinChanger
 			harmony.Patch(typeof(SkeletonGraphic).GetMethods().First(x => x.Name == "Update" && x.GetParameters().Length == 0), null, GetPatch(nameof(GraphicsApply)));
 			harmony.Patch(typeof(SkeletonAnimation).GetMethod("Update",BindingFlags.Public|BindingFlags.Instance,null,new Type[] { typeof(float)} ,null), null, GetPatch(nameof(AnimApply)));
 			harmony.Patch(typeof(CharacterExpression).GetMethod("RefreshExpressions", BindingFlags.NonPublic | BindingFlags.Instance), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
-			harmony.Patch(typeof(CharacterApply).GetMethod("OnEnable", BindingFlags.NonPublic|BindingFlags.Instance),null, GetPatch(nameof(charapply)));
+			harmony.Patch(typeof(CharacterApply).GetMethod("OnCharacterApply", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(charapply)));
+			harmony.Patch(typeof(CharacterApply).GetMethod("OnEnable", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(charapply2)));
 
 
 		}
 		static void charapply(CharacterApply __instance)
         {
+			ModLogger.Debug("OWO");
 			Mod.Show(__instance);
+		}
+		static void charapply2(CharacterApply __instance)
+		{
+			EventManager.instance.Invoke("UI/OnCharacterApply", null);
 		}
 		private static void OnStart()
         {
@@ -321,6 +327,7 @@ namespace SkinChanger
 			"victoryShow",
 			"failShow"
 		};
+		static Material bMat;
 		private static Spine.Skeleton last;
 		public static List<Spine.Skeleton> changed = new List<Spine.Skeleton>();
 		private static void GraphicsApply(SkeletonGraphic __instance)
@@ -509,6 +516,16 @@ namespace SkinChanger
 						{
 							try
 							{
+								if (bMat == null)
+									bMat = new Material(s.Attachment.GetMaterial());
+								if(s.Attachment is Spine.MeshAttachment)
+                                {
+									try
+									{
+										((Spine.AtlasRegion)((Spine.MeshAttachment)s.Attachment).RendererObject).page.rendererObject = new Material(bMat);
+									}
+									catch { }
+                                }
 								if (!omfg.ContainsKey(___m_Index))
 									omfg.Add(___m_Index, s.Attachment.GetMaterial().mainTexture.name + ".png");
 								if (File.Exists(Path.Combine(Back.GetSkin(___m_Index, Skins.instance.selected[___m_Index]), omfg[___m_Index])))
