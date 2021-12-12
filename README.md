@@ -53,6 +53,3 @@ Might make easier in future.
 ~~Go to the folder in file explorer and search for `ext:png`~~
 
 ~~Drop the files into `MuseDash\Skins\Costume Name\Default`~~
-
-### Donate if you feel like it
-[Patreon](https://www.patreon.com/BustR75) end whenever you want I just do this for fun
