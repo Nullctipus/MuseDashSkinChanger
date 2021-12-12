@@ -42,7 +42,9 @@ Enable Extract
 
 Play character you want to extract (Mainshow, Battle, Loose, Win)
 
-Might make easier in future.
+Click Extract All
+
+~~Might make easier in future.~~
 
 ~~Download [this](https://sourceforge.net/projects/utinyripper/files/) and extract it into a new folder~~
 
