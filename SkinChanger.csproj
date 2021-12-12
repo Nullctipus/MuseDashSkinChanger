@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SkinChanger</RootNamespace>
     <AssemblyName>SkinChanger</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -59,6 +59,30 @@
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="PeroTools2">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PeroTools2.Account">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.Account.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PeroTools2.Audio">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.Audio.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PeroTools2.GeneralLocalization">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.GeneralLocalization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PeroTools2.Pool">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.Pool.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PeroTools2.UI">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\PeroTools2.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Sirenix.Serialization">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\Sirenix.Serialization.dll</HintPath>
       <Private>False</Private>
@@ -69,6 +93,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -87,6 +112,10 @@
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Muse Dash\MuseDash_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">

@@ -29,13 +29,19 @@ namespace SkinChanger
     public class Back : IMod
     {
         #region vars
-        private static readonly string[] shows = new string[]
+        private static readonly string[] characterShows = new string[]
         {
             "mainShow",
             "battleShow",
-            "feverShow",
+            //"feverShow",
             "victoryShow",
             "failShow"
+        };
+        private static readonly string[] elfinShows = new string[]
+        {
+            "mainShow",
+            "prefab",
+            "chipImage"
         };
         static string _Name;
         public string Name
@@ -90,9 +96,13 @@ namespace SkinChanger
             harmony = new Harmony("Apotheosis.MuseDash.Skin");
             harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 
+            //Vict Fail Elfin
             harmony.Patch(AccessTools.Method(typeof(SkeletonGraphic),"Awake"), null, GetPatch(nameof(GraphicsApply)));
-            harmony.Patch(AccessTools.Method(typeof(SkeletonAnimation),"Awake"), null, GetPatch(nameof(SkeletonAnimationApply)));
+            //Char
+            harmony.Patch(AccessTools.Method(typeof(SkeletonRenderer),"Awake"), null, GetPatch(nameof(SkeletonRendererApply)));
+            //Expressions
             harmony.Patch(AccessTools.Method(typeof(CharacterExpression),"RefreshExpressions"), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
+            //Main Show
             harmony.Patch(AccessTools.Method(typeof(CharacterApply),"Awake"), null, GetPatch(nameof(CharacterApplyApply)));
 
 
@@ -113,9 +123,9 @@ namespace SkinChanger
                 skins.Add(new DirectoryInfo(s).Name, skin);
             }
         }
-        public static string GetSkin(int character, int selected)
+        public static string GetSkin(int character, int selected,bool elfin = false)
         {
-            string name = Singleton<ConfigManager>.instance.GetConfigStringValue("character_English", character, "cosName");
+            string name = Singleton<ConfigManager>.instance.GetConfigStringValue(elfin ? "eflin_English":"character_English", character, elfin ? "name" : "cosName") ;
             try
             {
                 return skins[name][selected];
@@ -134,15 +144,6 @@ namespace SkinChanger
                     return true;
             }
             return false;
-        }
-        public static string Combine(params string[] paths)
-        {
-            string s2 = paths[0];
-            for(int i =1; i<paths.Length;i++)
-            {
-                s2 = Path.Combine(s2, paths[i]);
-            }
-            return s2;
         }
         public static Texture2D GetTexture(string path)
         {
@@ -168,27 +169,55 @@ namespace SkinChanger
         }
         private static void GraphicsApply(SkeletonGraphic __instance)
         {
-            int change = Scan(__instance.gameObject);
-            //Extract
-            if(Front.extract && change > -1)
+            try
             {
-                Extract(__instance.OverrideTexture as Texture2D, change);
-            }
-            if (change > -1 && Front.instance.selected[change] > -1)
-            {
-                try
+                bool elfin = false;
+                int change = Scan(__instance.gameObject);
+                if (change == -1) { change = Scan(__instance.gameObject, true); elfin = true; }
+#if DEBUG
+                ModLogger.AddLog("GraphicsApply", change.ToString(), elfin);
+#endif
+                //Extract
+                if (Front.extract && change > -1)
                 {
-                    if (File.Exists(Path.Combine(GetSkin(change, Front.instance.selected[change]), __instance.mainTexture.name + ".png")))
-                        __instance.OverrideTexture = GetTexture(Path.Combine(GetSkin(change, Front.instance.selected[change]), __instance.mainTexture.name + ".png"));
-                    if (Forground) __instance.material.renderQueue = 3100;
-                    else __instance.material.renderQueue = 3000;
+                    Extract((__instance.OverrideTexture ?? __instance.mainTexture) as Texture2D, change, elfin);
                 }
-                catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
+                if (elfin)
+                {
+                    if (change > -1 && Front.instance.selectedElfin[change] > -1)
+                    {
+                        try
+                        {
+                            ModLogger.AddLog("Skinchanger", "", change + " " + Front.instance.selectedElfin[change]);
+                            if (File.Exists(Path.Combine(GetSkin(change, Front.instance.selectedElfin[change], true), __instance.mainTexture.name + ".png")))
+                                __instance.OverrideTexture = GetTexture(Path.Combine(GetSkin(change, Front.instance.selectedElfin[change], true), __instance.mainTexture.name + ".png"));
+                            /*if (Forground) __instance.material.renderQueue = 3100;
+                            else __instance.material.renderQueue = 3000;*/
+                        }
+                        catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
+                    }
+                }
+                else if (change > -1 && Front.instance.selectedCharacter[change] > -1)
+                {
+                    try
+                    {
+                        ModLogger.AddLog("Skinchanger", "", change + " " + Front.instance.selectedCharacter[change]);
+                        if (File.Exists(Path.Combine(GetSkin(change, Front.instance.selectedCharacter[change]), __instance.mainTexture.name + ".png")))
+                            __instance.OverrideTexture = GetTexture(Path.Combine(GetSkin(change, Front.instance.selectedCharacter[change]), __instance.mainTexture.name + ".png"));
+                        if (Forground) __instance.material.renderQueue = 3100;
+                        else __instance.material.renderQueue = 3000;
+                    }
+                    catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
+                }
+            }
+            catch (Exception e)
+            {
+                ModLogger.AddLog("Skinchanger", "", e);
             }
         }
-        private static void SkeletonAnimationApply(SkeletonAnimation __instance)
+        private static void SkeletonRendererApply(SkeletonRenderer __instance,MeshRenderer ___meshRenderer)
         {
-            var s = __instance.GetComponent<MeshRenderer>();
+            //var ___meshRenderer = __instance.GetComponent<MeshRenderer>();
             int change = Scan(__instance.gameObject);
 
             //Extract
@@ -196,10 +225,10 @@ namespace SkinChanger
             {
                 try
                 {
-                    if (s != null)
+                    if (___meshRenderer != null)
                     {
-                        if (!File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s.sharedMaterial.mainTexture.name + ".png")))
-                            Extract(s.sharedMaterial.mainTexture as Texture2D, change);
+                        if (!File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png")))
+                            Extract(___meshRenderer.sharedMaterial.mainTexture as Texture2D, change);
                     }
                 }
                 catch { }
@@ -207,20 +236,20 @@ namespace SkinChanger
                 {
                     try
                     {
-                        if (!File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
+                        if (!File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
                             Extract(s2.Attachment.GetMaterial().mainTexture as Texture2D,change);
                     }
                     catch { }
                 }
             }
-            if (change > -1 && Front.instance.selected[change] > -1)
+            if (change > -1 && Front.instance.selectedCharacter[change] > -1)
             {
-                if (s != null)
+                if (___meshRenderer != null)
                 {
-                    if (Forground) s.sharedMaterial.renderQueue = 3100;
-                    else s.sharedMaterial.renderQueue = 3000;
-                    if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s.sharedMaterial.mainTexture.name + ".png")))
-                        s.sharedMaterial.mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s.sharedMaterial.mainTexture.name + ".png"));
+                    if (Forground) ___meshRenderer.sharedMaterial.renderQueue = 3100;
+                    else ___meshRenderer.sharedMaterial.renderQueue = 3000;
+                    if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png")))
+                        ___meshRenderer.sharedMaterial.mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png"));
                 }
                 try
                 {
@@ -230,8 +259,8 @@ namespace SkinChanger
                         {
                             if (Forground) s2.Attachment.GetMaterial().renderQueue = 3100;
                             else s2.Attachment.GetMaterial().renderQueue = 3000;
-                            if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
-                                s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selected[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
+                            if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
+                                s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
                         }
                         catch { }
 
@@ -254,9 +283,9 @@ namespace SkinChanger
                 {
                     expressions.Add(new Expression(expression.animName, expression.audioNames, expression.texts, expression.weight));
                 }
-                File.WriteAllText(Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance["character_English"][___m_CharacterIdx]["cosName"].ToObject<string>(), "Default", "Expressions.json"), Newtonsoft.Json.JsonConvert.SerializeObject(expressions, Newtonsoft.Json.Formatting.Indented));
+                File.WriteAllText(Path.Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance["character_English"][___m_CharacterIdx]["cosName"].ToObject<string>(), "Default", "Expressions.json"), Newtonsoft.Json.JsonConvert.SerializeObject(expressions, Newtonsoft.Json.Formatting.Indented));
             }
-            string skin = GetSkin(___m_CharacterIdx, Front.instance.selected[___m_CharacterIdx]);
+            string skin = GetSkin(___m_CharacterIdx, Front.instance.selectedCharacter[___m_CharacterIdx]);
             if (File.Exists(Path.Combine(skin, "Expressions.json")))
             {
                 List<Expression> expression = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Expression>>(File.ReadAllText(Path.Combine(skin, "Expressions.json")));
@@ -298,7 +327,7 @@ namespace SkinChanger
                     }
                 }
                 //Reset To Default Skin
-                if (___m_Index > -1 && Front.instance.selected[___m_Index] == -1)
+                if (___m_Index > -1 && Front.instance.selectedCharacter[___m_Index] == -1)
                 {
                     foreach (Spine.Slot slot in rend.Slots)
                     {
@@ -317,7 +346,7 @@ namespace SkinChanger
                     }
                 }
                 //Set Modded Skin
-                if (___m_Index > -1 && Front.instance.selected[___m_Index] > -1)
+                if (___m_Index > -1 && Front.instance.selectedCharacter[___m_Index] > -1)
                 {
                     foreach (Spine.Slot slot in rend.Slots)
                     {
@@ -335,9 +364,9 @@ namespace SkinChanger
                             }
                             if (!TextureNameDictionary.ContainsKey(___m_Index))
                                 TextureNameDictionary.Add(___m_Index, slot.Attachment.GetMaterial().mainTexture.name + ".png");
-                            if (File.Exists(Path.Combine(GetSkin(___m_Index, Front.instance.selected[___m_Index]), TextureNameDictionary[___m_Index])))
+                            if (File.Exists(Path.Combine(GetSkin(___m_Index, Front.instance.selectedCharacter[___m_Index]), TextureNameDictionary[___m_Index])))
                             {
-                                string skin = GetSkin(___m_Index, Front.instance.selected[___m_Index]);
+                                string skin = GetSkin(___m_Index, Front.instance.selectedCharacter[___m_Index]);
                                 string dir = Path.Combine(skin, TextureNameDictionary[___m_Index]);
                                 Texture2D texture = GetTexture(dir);
                                 if (!CharacterApplyDefaultTextures.ContainsKey(___m_Index) && !IsModded((Texture2D)slot.Attachment.GetMaterial().mainTexture))
@@ -355,39 +384,107 @@ namespace SkinChanger
             catch { }
         }
         #endregion
-        static int Scan(GameObject obj, bool elfin = false)
+        public static void ReloadAssets()
         {
+            foreach(var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
+            {
+                int index = Scan(c.gameObject);
+                if (index != -1) CharacterApplyApply(c, index);
+            }
+            foreach (var c in Resources.FindObjectsOfTypeAll<SkeletonRenderer>())
+            {
+               SkeletonRendererApply(c, c.GetComponent<MeshRenderer>());
+            }
+            foreach (var c in Resources.FindObjectsOfTypeAll<SkeletonGraphic>())
+            {
+                GraphicsApply(c);
+            }
+        }
+        public static int Scan(GameObject obj, bool elfin = false)
+        {
+            string name = obj.name;
+            if (obj.name == "default")  name = obj.transform.parent.name;
+            name = name.Replace("(Clone)", "");
             int change = -1;
             for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson(elfin ? "elfin" : "character", false).Count; i++)
             {
-                if (elfin && obj.name.Replace("(Clone)", "").Contains(Singleton<ConfigManager>.instance["elfin"][i]["prefab"].ToObject<string>().ToLower()))
-                    change = i;
-                else
-                    foreach (string s in shows)
+                if (elfin)
+                    foreach (string s in elfinShows)
                     {
-                        if (obj.name.Replace("(Clone)", "").Contains(Singleton<ConfigManager>.instance["character"][i]["cosName"].ToObject<string>().ToLower()))
+                        if (name.Contains(Singleton<ConfigManager>.instance["elfin"][i]["name"].ToObject<string>().ToLower()))
                             change = i;
-                        if (obj.name.Replace("(Clone)", "") == Singleton<ConfigManager>.instance.GetJson("character", false)[i][s].ToObject<string>())
+                        if (name.Contains(Singleton<ConfigManager>.instance.GetJson("elfin", false)[i][s].ToObject<string>()))
+                            change = i;
+                    }
+                else
+                    foreach (string s in characterShows)
+                    {
+                        if (name.Contains(Singleton<ConfigManager>.instance["character"][i]["cosName"].ToObject<string>().ToLower()))
+                            change = i;
+                        if (name.Contains(Singleton<ConfigManager>.instance.GetJson("character", false)[i][s].ToObject<string>()))
                             change = i;
                     }
             }
+#if DEBUG
+            ModLogger.AddLog("Scan", obj.name, change);
+#endif
             return change;
         }
-        static void Extract(Texture2D tex, int num, bool elfin = false)
+        public static void ExtractAll()
         {
-
-            Directory.CreateDirectory(Combine(Front.CurrentDirectory, "Skins"));
-            Directory.CreateDirectory(Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "prefab" : "cosName"].ToObject<string>()));
-            Directory.CreateDirectory(Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "prefab" : "cosName"].ToObject<string>(), "Default"));
-
-            string file = Combine(Front.CurrentDirectory,
-                    "Skins\\" + Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "prefab" : "cosName"].ToObject<string>() + "\\Default",
-                    tex.name + ".png") ;
-
-            if (!File.Exists(file))
-                File.WriteAllBytes(file, MakeReadable(tex).EncodeToPNG());
+            for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
+            {
+                foreach (string s in characterShows)
+                {
+                    try
+                    {
+                        ModLogger.AddLog("Extract", Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>(), s);
+                        GameObject.Destroy(GameObject.Instantiate(PeroTools2.Commons.SingletonScriptableObject<PeroTools2.Resources.ResourcesManager>.instance.LoadFromName<GameObject>(Singleton<ConfigManager>.instance.GetConfigStringValue("character", i, s))));
+                            
+                    }
+                    catch (Exception e){ ModLogger.AddLog("Extract", Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>(), e); };
+                }
+            }
+            for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
+            {
+                foreach (string s in elfinShows)
+                {
+                    GameObject.Instantiate(Singleton<PeroTools2.Resources.ResourcesManager>.instance.LoadFromName<GameObject>(Singleton<ConfigManager>.instance["elfin_English"][i][s].ToObject<string>()));
+                }
+                
+            }
         }
-        static Texture2D MakeReadable(Texture2D img)
+        public static void Extract(Texture2D tex, int num, bool elfin = false)
+        {
+            Directory.CreateDirectory(Path.Combine(Front.CurrentDirectory, "Skins"));
+            Directory.CreateDirectory(Path.Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"].ToObject<string>()));
+            Directory.CreateDirectory(Path.Combine(Front.CurrentDirectory, "Skins", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"].ToObject<string>(), "Default"));
+            try
+            {
+                string file = Path.Combine(
+                        Front.CurrentDirectory,
+                        "Skins",
+                        Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"].ToObject<string>(),
+                        "Default",
+                        tex.name + ".png");
+
+
+
+                if (!File.Exists(file))
+                    File.WriteAllBytes(file, MakeReadable(tex).EncodeToPNG());
+            }
+            catch
+            {
+                ModLogger.AddLog("Skinchanger", "0", Front.CurrentDirectory);
+                ModLogger.AddLog("Skinchanger", "1", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"]);
+                ModLogger.AddLog("Skinchanger", "2", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num]);
+                ModLogger.AddLog("Skinchanger", "3", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"]);
+                ModLogger.AddLog("Skinchanger", "4", Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"].ToObject<string>());
+                ModLogger.AddLog("Skinchanger", "5", tex);
+                ModLogger.AddLog("Skinchanger", "6", tex.name);
+            }
+        }
+        public static Texture2D MakeReadable(Texture2D img)
         {
             img.filterMode = FilterMode.Point;
             RenderTexture rt = RenderTexture.GetTemporary(img.width, img.height);

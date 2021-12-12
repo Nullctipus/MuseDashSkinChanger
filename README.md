@@ -34,15 +34,25 @@ edit the files in that folder with any program you want.
 Optionaly create a preview image with a 1x1 ratio called `Preview.png`
 
 ## How to Extract Skins
-Download [this](https://sourceforge.net/projects/utinyripper/files/) and extract it into a new folder
+Start the game
 
-Run `uTinyRipper.exe` then drop battle and unbattle from `Muse Dash\MuseDash_Data\StreamingAssets\AssetBundles\datas\characters\%characterid%`
+Open the menu
 
-When that is done loading click Export then extract to a folder you know the location of.
+Enable Extract
 
-Go to the folder in file explorer and search for `ext:png`
+Play character you want to extract (Mainshow, Battle, Loose, Win)
 
-Drop the files into `MuseDash\Skins\Costume Name\Default`
+Might make easier in future.
+
+~~Download [this](https://sourceforge.net/projects/utinyripper/files/) and extract it into a new folder~~
+
+~~Run `uTinyRipper.exe` then drop battle and unbattle from `Muse Dash\MuseDash_Data\StreamingAssets\AssetBundles\datas\characters\%characterid%`~~
+
+~~When that is done loading click Export then extract to a folder you know the location of.~~
+
+~~Go to the folder in file explorer and search for `ext:png`~~
+
+~~Drop the files into `MuseDash\Skins\Costume Name\Default`~~
 
 ### Donate if you feel like it
 [Patreon](https://www.patreon.com/BustR75) end whenever you want I just do this for fun
