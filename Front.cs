@@ -161,7 +161,7 @@ namespace SkinChanger
 				if (GUILayout.Button("Reload"))
 				{
 					Back.Reload();
-					Back.ReloadAssets();
+					//Back.ReloadAssets();
 				}
 				if (GUILayout.Button("Extract All"))
 				{

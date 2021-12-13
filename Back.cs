@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Assets.Scripts.PeroTools.Commons;
+using Assets.Scripts.PeroTools.Managers;
+using Assets.Scripts.UI.Controls;
+using HarmonyLib;
+using ModHelper;
+using Spine.Unity;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Collections.Generic;
-using ModHelper;
-using HarmonyLib;
-using Spine.Unity;
 using UnityEngine;
-using Assets.Scripts.PeroTools.Commons;
-using Assets.Scripts.UI.Controls;
-using Assets.Scripts.PeroTools.Managers;
 
 namespace SkinChanger
 {
@@ -21,14 +21,17 @@ namespace SkinChanger
             texts = text;
             weight = weigh;
         }
+
         public string animName;
         public string[] audioNames;
         public List<string> texts;
         public float weight;
     }
+
     public class Back : IMod
     {
         #region vars
+
         private static readonly string[] characterShows = new string[]
         {
             "mainShow",
@@ -37,13 +40,16 @@ namespace SkinChanger
             "victoryShow",
             "failShow"
         };
+
         private static readonly string[] elfinShows = new string[]
         {
             "mainShow",
             "prefab",
             "chipImage"
         };
-        static string _Name;
+
+        private static string _Name;
+
         public string Name
         {
             get
@@ -64,12 +70,15 @@ namespace SkinChanger
                 return _Name;
             }
         }
+
         public static bool Forground = false;
         public static Back instance;
-        static Dictionary<int, string> TextureNameDictionary = new Dictionary<int, string>();
-        static Dictionary<CharacterApply, Spine.Skeleton> CharacterApplyToSkeleton = new Dictionary<CharacterApply, Spine.Skeleton>();
-        static Dictionary<int, Texture2D> CharacterApplyDefaultTextures = new Dictionary<int, Texture2D>();
-        static Material CharacterApplyBackupMaterial;
+        private static Dictionary<int, string> TextureNameDictionary = new Dictionary<int, string>();
+        private static Dictionary<CharacterApply, Spine.Skeleton> CharacterApplyToSkeleton = new Dictionary<CharacterApply, Spine.Skeleton>();
+        private static Dictionary<int, Texture2D> CharacterApplyDefaultTextures = new Dictionary<int, Texture2D>();
+        private static Dictionary<int, Texture2D> GraphicDefaultTextures = new Dictionary<int, Texture2D>();
+        private static Dictionary<int, Material> CharacterApplyBackupMaterial = new Dictionary<int, Material>();
+        private static Dictionary<int, Material> GraphicBackupMaterial = new Dictionary<int, Material>();
 
         public string Version = "1.7.0";
         public string Description => "Change the textures on the characters";
@@ -77,7 +86,9 @@ namespace SkinChanger
         public string Author => "BustR75";
 
         public string HomePage => "https://github.com/BustR75/MuseDashSkinChanger";
-#endregion
+
+        #endregion vars
+
         public static HarmonyMethod GetPatch(string name)
         {
             return new HarmonyMethod(typeof(Back).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
@@ -92,22 +103,21 @@ namespace SkinChanger
 
         public void DoPatching()
         {
-
             harmony = new Harmony("Apotheosis.MuseDash.Skin");
             harmony.Patch(typeof(Assets.Scripts.GameCore.Managers.MainManager).GetMethod("InitLanguage", BindingFlags.NonPublic | BindingFlags.Instance), null, GetPatch(nameof(OnStart)));
 
             //Vict Fail Elfin
-            harmony.Patch(AccessTools.Method(typeof(SkeletonGraphic),"Awake"), null, GetPatch(nameof(GraphicsApply)));
+            harmony.Patch(AccessTools.Method(typeof(SkeletonGraphic), "Awake"), null, GetPatch(nameof(GraphicsApply)));
             //Char
-            harmony.Patch(AccessTools.Method(typeof(SkeletonRenderer),"Awake"), null, GetPatch(nameof(SkeletonRendererApply)));
+            harmony.Patch(AccessTools.Method(typeof(SkeletonRenderer), "Awake"), null, GetPatch(nameof(SkeletonRendererApply)));
             //Expressions
-            harmony.Patch(AccessTools.Method(typeof(CharacterExpression),"RefreshExpressions"), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
+            harmony.Patch(AccessTools.Method(typeof(CharacterExpression), "RefreshExpressions"), GetPatch(nameof(PreRefreshExpression)), GetPatch(nameof(RefreshExpression)));
             //Main Show
-            harmony.Patch(AccessTools.Method(typeof(CharacterApply),"Awake"), null, GetPatch(nameof(CharacterApplyApply)));
-
-
+            harmony.Patch(AccessTools.Method(typeof(CharacterApply), "Awake"), null, GetPatch(nameof(CharacterApplyApply)));
         }
+
         public static Dictionary<string, List<string>> skins = new Dictionary<string, List<string>>();
+
         public static void Reload()
         {
             textures.Clear();
@@ -123,9 +133,10 @@ namespace SkinChanger
                 skins.Add(new DirectoryInfo(s).Name, skin);
             }
         }
-        public static string GetSkin(int character, int selected,bool elfin = false)
+
+        public static string GetSkin(int character, int selected, bool elfin = false)
         {
-            string name = Singleton<ConfigManager>.instance.GetConfigStringValue(elfin ? "eflin_English":"character_English", character, elfin ? "name" : "cosName") ;
+            string name = Singleton<ConfigManager>.instance.GetConfigStringValue(elfin ? "eflin_English" : "character_English", character, elfin ? "name" : "cosName");
             try
             {
                 return skins[name][selected];
@@ -134,8 +145,8 @@ namespace SkinChanger
             {
                 return "";
             }
-
         }
+
         public static bool IsModded(Texture2D texture)
         {
             foreach (var v in textures)
@@ -145,7 +156,8 @@ namespace SkinChanger
             }
             return false;
         }
-        public static Texture2D GetTexture(string path)
+
+        public static Texture2D GetTexture(string path,string PreName = "")
         {
             if (!textures.ContainsKey(path))
             {
@@ -155,18 +167,23 @@ namespace SkinChanger
                 textures[path].mipMapBias = 0;
                 textures[path].anisoLevel = 1;
                 textures[path].Apply();
-                Console.WriteLine(textures[path].height + ", " + textures[path].width);
+                textures[path].name = PreName;
+                //Console.WriteLine(textures[path].height + ", " + textures[path].width);
             }
             return textures[path];
         }
-        static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
+
+        private static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
+
         #region PATCHES
+
         private static void OnStart()
         {
             GameObject gameObject = new GameObject("SkinMenu");
             UnityEngine.Object.DontDestroyOnLoad(gameObject);
             gameObject.AddComponent<Front>();
         }
+
         private static void GraphicsApply(SkeletonGraphic __instance)
         {
             try
@@ -201,9 +218,14 @@ namespace SkinChanger
                 {
                     try
                     {
+                        if (!GraphicDefaultTextures.ContainsKey(change) && !IsModded((Texture2D)__instance.material.mainTexture))
+                            GraphicDefaultTextures.Add(change, (Texture2D)__instance.material.mainTexture);
+                        if (!GraphicBackupMaterial.ContainsKey(change))
+                            GraphicBackupMaterial.Add(change, new Material(__instance.material));
+                        __instance.material = new Material(GraphicBackupMaterial[change]);
                         ModLogger.AddLog("Skinchanger", "", change + " " + Front.instance.selectedCharacter[change]);
                         if (File.Exists(Path.Combine(GetSkin(change, Front.instance.selectedCharacter[change]), __instance.mainTexture.name + ".png")))
-                            __instance.OverrideTexture = GetTexture(Path.Combine(GetSkin(change, Front.instance.selectedCharacter[change]), __instance.mainTexture.name + ".png"));
+                            __instance.OverrideTexture = GetTexture(Path.Combine(GetSkin(change, Front.instance.selectedCharacter[change]), __instance.mainTexture.name + ".png"), __instance.mainTexture.name);
                         if (Forground) __instance.material.renderQueue = 3100;
                         else __instance.material.renderQueue = 3000;
                     }
@@ -215,7 +237,8 @@ namespace SkinChanger
                 ModLogger.AddLog("Skinchanger", "", e);
             }
         }
-        private static void SkeletonRendererApply(SkeletonRenderer __instance,MeshRenderer ___meshRenderer)
+
+        private static void SkeletonRendererApply(SkeletonRenderer __instance, MeshRenderer ___meshRenderer)
         {
             //var ___meshRenderer = __instance.GetComponent<MeshRenderer>();
             int change = Scan(__instance.gameObject);
@@ -237,7 +260,7 @@ namespace SkinChanger
                     try
                     {
                         if (!File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
-                            Extract(s2.Attachment.GetMaterial().mainTexture as Texture2D,change);
+                            Extract(s2.Attachment.GetMaterial().mainTexture as Texture2D, change);
                     }
                     catch { }
                 }
@@ -246,10 +269,13 @@ namespace SkinChanger
             {
                 if (___meshRenderer != null)
                 {
+
+                    ModLogger.Debug(___meshRenderer.sharedMaterial.mainTexture.name);
                     if (Forground) ___meshRenderer.sharedMaterial.renderQueue = 3100;
                     else ___meshRenderer.sharedMaterial.renderQueue = 3000;
                     if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png")))
-                        ___meshRenderer.sharedMaterial.mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png"));
+                        ___meshRenderer.sharedMaterial.mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), ___meshRenderer.sharedMaterial.mainTexture.name + ".png"),
+                                    ___meshRenderer.sharedMaterial.mainTexture.name);
                 }
                 try
                 {
@@ -257,23 +283,26 @@ namespace SkinChanger
                     {
                         try
                         {
+                            ModLogger.Debug(s2.Attachment.GetMaterial().mainTexture.name);
                             if (Forground) s2.Attachment.GetMaterial().renderQueue = 3100;
                             else s2.Attachment.GetMaterial().renderQueue = 3000;
                             if (File.Exists(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png")))
-                                s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"));
+                                s2.Attachment.GetMaterial().mainTexture = Back.GetTexture(Path.Combine(Back.GetSkin(change, Front.instance.selectedCharacter[change]), s2.Attachment.GetMaterial().mainTexture.name + ".png"),
+                                    s2.Attachment.GetMaterial().mainTexture.name);
                         }
                         catch { }
-
                     }
                 }
                 catch (Exception e) { ModLogger.AddLog("Skinchanger", "", e.Message + "\n" + e.StackTrace); }
             }
         }
+
         private static void PreRefreshExpression(ref int ___m_CharacterIdx)
         {
             //Force refresh id
             ___m_CharacterIdx = -1;
         }
+
         private static void RefreshExpression(ref List<CharacterExpression.Expression> ___m_Expressions, int ___m_CharacterIdx)
         {
             if (Front.extract)
@@ -304,6 +333,7 @@ namespace SkinChanger
                 ___m_Expressions.AddRange(expressions);
             }
         }
+
         private static void CharacterApplyApply(CharacterApply __instance, int ___m_Index)
         {
             try
@@ -335,7 +365,6 @@ namespace SkinChanger
                         {
                             if (!TextureNameDictionary.ContainsKey(___m_Index))
                                 TextureNameDictionary.Add(___m_Index, slot.Attachment.GetMaterial().mainTexture.name + ".png");
-
                             if (!CharacterApplyDefaultTextures.ContainsKey(___m_Index) && !IsModded((Texture2D)slot.Attachment.GetMaterial().mainTexture))
                                 CharacterApplyDefaultTextures.Add(___m_Index, (Texture2D)slot.Attachment.GetMaterial().mainTexture);
                             if (Forground) slot.Attachment.GetMaterial().renderQueue = 3100;
@@ -352,18 +381,18 @@ namespace SkinChanger
                     {
                         try
                         {
-                            if (CharacterApplyBackupMaterial == null)
-                                CharacterApplyBackupMaterial = new Material(slot.Attachment.GetMaterial());
+                            if (!TextureNameDictionary.ContainsKey(___m_Index))
+                                TextureNameDictionary.Add(___m_Index, slot.Attachment.GetMaterial().mainTexture.name + ".png");
+                            if (!CharacterApplyBackupMaterial.ContainsKey(___m_Index))
+                                CharacterApplyBackupMaterial.Add(___m_Index, new Material(slot.Attachment.GetMaterial()));
                             if (slot.Attachment is Spine.MeshAttachment)
                             {
                                 try
                                 {
-                                    ((Spine.AtlasRegion)((Spine.MeshAttachment)slot.Attachment).RendererObject).page.rendererObject = new Material(CharacterApplyBackupMaterial);
+                                    ((Spine.AtlasRegion)((Spine.MeshAttachment)slot.Attachment).RendererObject).page.rendererObject = new Material(CharacterApplyBackupMaterial[___m_Index]);
                                 }
                                 catch { }
                             }
-                            if (!TextureNameDictionary.ContainsKey(___m_Index))
-                                TextureNameDictionary.Add(___m_Index, slot.Attachment.GetMaterial().mainTexture.name + ".png");
                             if (File.Exists(Path.Combine(GetSkin(___m_Index, Front.instance.selectedCharacter[___m_Index]), TextureNameDictionary[___m_Index])))
                             {
                                 string skin = GetSkin(___m_Index, Front.instance.selectedCharacter[___m_Index]);
@@ -383,27 +412,30 @@ namespace SkinChanger
             }
             catch { }
         }
-        #endregion
+
+        #endregion PATCHES
+
         public static void ReloadAssets()
         {
-            foreach(var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
+            foreach (var c in Resources.FindObjectsOfTypeAll<CharacterApply>())
             {
                 int index = Scan(c.gameObject);
                 if (index != -1) CharacterApplyApply(c, index);
             }
             foreach (var c in Resources.FindObjectsOfTypeAll<SkeletonRenderer>())
             {
-               SkeletonRendererApply(c, c.GetComponent<MeshRenderer>());
+                SkeletonRendererApply(c, c.GetComponent<MeshRenderer>());
             }
             foreach (var c in Resources.FindObjectsOfTypeAll<SkeletonGraphic>())
             {
                 GraphicsApply(c);
             }
         }
+
         public static int Scan(GameObject obj, bool elfin = false)
         {
             string name = obj.name;
-            if (obj.name == "default")  name = obj.transform.parent.name;
+            if (obj.name == "default") name = obj.transform.parent.name;
             name = name.Replace("(Clone)", "");
             int change = -1;
             for (int i = 0; i < Singleton<ConfigManager>.instance.GetJson(elfin ? "elfin" : "character", false).Count; i++)
@@ -430,6 +462,7 @@ namespace SkinChanger
 #endif
             return change;
         }
+
         public static void ExtractAll()
         {
             for (int i = 0; i < Singleton<ConfigManager>.instance["character_English"].Count; i++)
@@ -440,9 +473,8 @@ namespace SkinChanger
                     {
                         ModLogger.AddLog("Extract", Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>(), s);
                         GameObject.Destroy(GameObject.Instantiate(PeroTools2.Commons.SingletonScriptableObject<PeroTools2.Resources.ResourcesManager>.instance.LoadFromName<GameObject>(Singleton<ConfigManager>.instance.GetConfigStringValue("character", i, s))));
-                            
                     }
-                    catch (Exception e){ ModLogger.AddLog("Extract", Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>(), e); };
+                    catch (Exception e) { ModLogger.AddLog("Extract", Singleton<ConfigManager>.instance["character_English"][i]["cosName"].ToObject<string>(), e); };
                 }
             }
             for (int i = 0; i < Singleton<ConfigManager>.instance["elfin_English"].Count; i++)
@@ -451,9 +483,9 @@ namespace SkinChanger
                 {
                     GameObject.Instantiate(Singleton<PeroTools2.Resources.ResourcesManager>.instance.LoadFromName<GameObject>(Singleton<ConfigManager>.instance["elfin_English"][i][s].ToObject<string>()));
                 }
-                
             }
         }
+
         public static void Extract(Texture2D tex, int num, bool elfin = false)
         {
             Directory.CreateDirectory(Path.Combine(Front.CurrentDirectory, "Skins"));
@@ -467,8 +499,6 @@ namespace SkinChanger
                         Singleton<ConfigManager>.instance[elfin ? "elfin_English" : "character_English"][num][elfin ? "name" : "cosName"].ToObject<string>(),
                         "Default",
                         tex.name + ".png");
-
-
 
                 if (!File.Exists(file))
                     File.WriteAllBytes(file, MakeReadable(tex).EncodeToPNG());
@@ -484,6 +514,7 @@ namespace SkinChanger
                 ModLogger.AddLog("Skinchanger", "6", tex.name);
             }
         }
+
         public static Texture2D MakeReadable(Texture2D img)
         {
             img.filterMode = FilterMode.Point;
