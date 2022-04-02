@@ -14,9 +14,9 @@ namespace SkinChangerRewrite
     {
         public override void OnApplicationStart()
         {
-            Logger.Log("Hello World", ConsoleColor.Magenta);
-            Logger.Error("Hello World", ConsoleColor.Magenta);
-            Logger.Warn("Hello World", ConsoleColor.Magenta);
+            Logger.Log(Info.Name + " " + Info.Version);
+            //Initialize Harmony
+            HarmonyUser.Start();
         }
     }
 }

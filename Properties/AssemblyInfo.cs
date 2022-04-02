@@ -36,8 +36,8 @@ using MelonLoader;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-
+//Melonloader Requires this
 [assembly: MelonInfo(typeof(SkinChangerRewrite.Main),"SkinChanger", "1.0.0")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
-[assembly: MelonColor(System.ConsoleColor.Cyan)]
-[assembly: MelonAuthorColor(System.ConsoleColor.Blue)]
+[assembly: MelonColor(System.ConsoleColor.Magenta)]
+[assembly: MelonAuthorColor(System.ConsoleColor.Red)]

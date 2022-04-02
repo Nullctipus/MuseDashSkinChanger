@@ -13,6 +13,7 @@ namespace SkinChangerRewrite
         {
             return DateTime.Now.ToString("hh:mm:ss.fff");
         }
+        // Create text like [TEXT] with only the inside colored
         static void Outline(string text,ConsoleColor color,bool space = true)
         {
             Console.Write((space ? " " : "") +"[");
@@ -21,12 +22,13 @@ namespace SkinChangerRewrite
             Console.ResetColor();
             Console.Write("]"+(space ? " " : ""));
         }
+        // Write the first part of logs Looks like: [00:00:00.000] [SkinChanger] 
         static void WritePrep()
         {
-            Outline(PrintTime(), ConsoleColor.Green,false);
-            Outline("SkinChanger", ConsoleColor.Cyan);
+            Outline(PrintTime(), ConsoleColor.Blue,false);
+            Outline("SkinChanger", ConsoleColor.Magenta);
         }
-        public static void Log(string log,ConsoleColor color = ConsoleColor.White)
+        public static void Log(object log,ConsoleColor color = ConsoleColor.White)
         {
             WritePrep();
             Console.ForegroundColor = color;
